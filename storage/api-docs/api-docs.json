@@ -1,0 +1,83 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "DEM",
+        "description": "Api documentation",
+        "contact": {
+            "email": "alessiopiccioli@webmapp.it"
+        },
+        "version": "1.0.0",
+        "x-logo": {
+            "url": "http://localhost:8000/assets/images/logo_sosec.jpg"
+        }
+    },
+    "paths": {
+        "/api/v1/elevation/{lng}/{lat}": {
+            "get": {
+                "tags": [
+                    "Elevation"
+                ],
+                "summary": "Get Elevation",
+                "description": "Retrieve the elevation of a point based on provided longitude and latitude.",
+                "operationId": "getElevation",
+                "parameters": [
+                    {
+                        "name": "lng",
+                        "in": "path",
+                        "description": "Longitude of the point",
+                        "required": true,
+                        "schema": {
+                            "type": "number",
+                            "format": "float"
+                        }
+                    },
+                    {
+                        "name": "lat",
+                        "in": "path",
+                        "description": "Latitude of the point",
+                        "required": true,
+                        "schema": {
+                            "type": "number",
+                            "format": "float"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "elevation": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 0
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Failed to retrieve elevation"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -4,6 +4,7 @@ services:
     extra_hosts:
         - host.docker.internal:host-gateway
     # user: root
+    platform: linux/amd64
     build: ./docker/configs/phpfpm
     restart: always
     container_name: "php81_${APP_NAME}"
@@ -15,6 +16,7 @@ services:
       - ".:/var/www/html/${DOCKER_PROJECT_DIR_NAME}"
     working_dir: '/var/www/html/${DOCKER_PROJECT_DIR_NAME}'
   db:
+    platform: linux/amd64
     image: postgis/postgis:14-3.3
     container_name: "postgres_${APP_NAME}"
     restart: always

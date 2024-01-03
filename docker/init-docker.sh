@@ -11,3 +11,5 @@ if [[ $xdebug = y ]]
 then
     bash docker/configs/phpfpm/init-xdebug.sh
 fi
+
+docker exec -i postgres_dem psql -c "CREATE EXTENSION postgis_raster;" -U dem
