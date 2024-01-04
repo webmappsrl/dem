@@ -22,10 +22,9 @@ git flow init
 Important NOTE: remember to checkout the develop branch.
 
 ```sh
+chown -R 33 ${instance name}
 cd ${instance name}
 bash docker/init-docker.sh
-docker exec -u 0 -it php81_${instance name} bash
-chown -R 33 storage
 ```
 
 *Important NOTE*: if you have installed XDEBUG you need to create the xdebug.log file on the docker:
