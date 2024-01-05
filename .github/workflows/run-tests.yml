@@ -24,7 +24,7 @@ jobs:
       - name: Copy .env
         run: cp .env-example .env
       - name: Install Dependencies
-        run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+        run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist --ignore-platform-reqs
       - name: Generate key
         run: php artisan key:generate
       - name: Add hosts to /etc/hosts
