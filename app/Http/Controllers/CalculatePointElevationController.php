@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Traits\SlopeAndElevationTrait;
 use Illuminate\Http\Request;
 
 class CalculatePointElevationController extends Controller
 {
+    use SlopeAndElevationTrait;
+
     /**
      * @OA\Get(
      *     path="/api/v1/elevation/{lng}/{lat}",
@@ -45,7 +48,7 @@ class CalculatePointElevationController extends Controller
      */
     public function getElevation($lng, $lat)
     {
-        $elevation = 0;
+        $elevation = $this->calcPointElevation($lat, $lng);
         return response()->json(['elevation' => $elevation]);
     }
 }
