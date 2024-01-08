@@ -13,19 +13,19 @@ return new class () extends Migration {
         Schema::create('tracks', function (Blueprint $table) {
             $table->id();
             $table->geometry('geometry');
-            $table->string('name');
-            $table->unsignedBigInteger('source_id');
-            $table->json('tags');
-            $table->decimal('distance');
-            $table->integer('ele_max');
-            $table->integer('ele_min');
-            $table->integer('ele_from');
-            $table->integer('ele_to');
-            $table->integer('ascent');
-            $table->integer('descent');
-            $table->integer('duration_forward_hiking');
-            $table->integer('duration_backward_hiking');
-            $table->boolean('round_trip');
+            $table->string('name')->nullable();
+            $table->unsignedBigInteger('source_id')->nullable();
+            $table->json('tags')->nullable();
+            $table->decimal('distance')->nullable();
+            $table->integer('ele_max')->nullable();
+            $table->integer('ele_min')->nullable();
+            $table->integer('ele_from')->nullable();
+            $table->integer('ele_to')->nullable();
+            $table->integer('ascent')->nullable();
+            $table->integer('descent')->nullable();
+            $table->integer('duration_forward_hiking')->nullable();
+            $table->integer('duration_backward_hiking')->nullable();
+            $table->boolean('round_trip')->nullable();
             $table->timestamps();
         });
     }
