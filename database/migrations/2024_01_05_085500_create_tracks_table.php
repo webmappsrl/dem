@@ -16,7 +16,7 @@ return new class () extends Migration {
             $table->string('name')->nullable();
             $table->unsignedBigInteger('source_id')->nullable();
             $table->json('tags')->nullable();
-            $table->decimal('distance')->nullable();
+            $table->integer('distance')->nullable();
             $table->integer('ele_max')->nullable();
             $table->integer('ele_min')->nullable();
             $table->integer('ele_from')->nullable();
@@ -25,6 +25,8 @@ return new class () extends Migration {
             $table->integer('descent')->nullable();
             $table->integer('duration_forward_hiking')->nullable();
             $table->integer('duration_backward_hiking')->nullable();
+            $table->integer('duration_forward_bike')->nullable();
+            $table->integer('duration_backward_bike')->nullable();
             $table->boolean('round_trip')->nullable();
             $table->timestamps();
         });

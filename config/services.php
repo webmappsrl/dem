@@ -31,4 +31,13 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'tech_params' => [
+        'simplify_preserve_topology' => env('SIMPLIFY_PRESERVE_TOPOLOGY', 5),
+        'sampling_step' => env('SAMPLING_STEP', 12.5),
+        'smoothed_elevation' => env('SMOOTHED_ELEVATION', 5),
+        'round_trip_max_distance' => env('ROUND_TRIP_MAX_DISTANCE', 250),
+        'avarage_hiking_speed' => env('AVARAGE_HIKING_SPEED', 3.5),
+        'avarage_biking_speed' => env('AVARAGE_BIKING_SPEED', 10.5),
+    ],
+
 ];
