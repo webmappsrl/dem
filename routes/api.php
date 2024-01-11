@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\V1\CalculatePointElevationController;
-use App\Http\Controllers\V1\CalculateSlopeController;
+use App\Http\Controllers\V1\CalculateTrackTechDataController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -19,6 +19,6 @@ use Illuminate\Support\Facades\Route;
 Route::name('api.')->group(function () {
     Route::prefix('v1')->name('v1')->group(function () {
         Route::get('/elevation/{lng}/{lat}', [CalculatePointElevationController::class, 'getElevation'])->name('get-point-elevation');
-        Route::post('/track', [CalculateSlopeController::class, 'getSlope'])->name('get-track-slope');
+        Route::post('/track', [CalculateTrackTechDataController::class, 'getTechData'])->name('get-track-tech-data');
     });
 });

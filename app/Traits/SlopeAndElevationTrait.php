@@ -142,7 +142,7 @@ trait SlopeAndElevationTrait
         $ele_min = null;
         $ele_max = null;
 
-        $this->calcAscentDescentEleMinEleMax($smoothed_line_points, $ascent, $descent, $ele_min, $ele_max);
+        $this->calcAscentDescentEleMinEleMax($smoothed_line_points, $ascent, $descent, $ele_max, $ele_min);
 
         // Calculate Distance
         $distance = intval(DB::select("SELECT ST_Length('$resampled_line') AS distance")[0]->distance) / 1000;
@@ -156,6 +156,20 @@ trait SlopeAndElevationTrait
         $duration_forward_bike = $this->calcDuration($distance, $ascent, 'bike');
         $duration_backward_bike = $this->calcDuration($distance, $descent, 'bike');
 
+        $track->ele_min = $ele_min;
+        $track->ele_max = $ele_max;
+        $track->ele_from = intval($smoothed_line_points[0]->smoothed_ele);
+        $track->ele_to = intval($smoothed_line_points[count($smoothed_line_points) - 1]->smoothed_ele);
+        $track->ascent = $ascent;
+        $track->descent = $descent;
+        $track->distance = $distance;
+        $track->duration_forward_hiking = $duration_forward_hiking;
+        $track->duration_backward_hiking = $duration_backward_hiking;
+        $track->duration_forward_bike = $duration_forward_bike;
+        $track->duration_backward_bike = $duration_backward_bike;
+        $track->round_trip = $round_trip;
+
+        $track->save();
 
         return $track;
     }

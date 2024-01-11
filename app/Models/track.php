@@ -24,6 +24,8 @@ class Track extends Model
         'descent',
         'duration_forward_hiking',
         'duration_backward_hiking',
+        'duration_forward_bike',
+        'duration_backward_bike',
         'round_trip',
     ];
 }

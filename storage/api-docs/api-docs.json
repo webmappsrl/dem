@@ -78,6 +78,87 @@
                     }
                 }
             }
+        },
+        "/api/v1/track": {
+            "post": {
+                "tags": [
+                    "Tech Data"
+                ],
+                "summary": "Get technical data for a track",
+                "operationId": "8fe610cebbc877c15953ad6ec76b91ba",
+                "requestBody": {
+                    "description": "GeoJSON object that needs to be added to the database",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {},
+                            "example": {
+                                "type": "Feature",
+                                "properties": {
+                                    "id": 27060,
+                                    "created_at": "2022-09-07T07:47:11.000000Z",
+                                    "updated_at": "2024-01-07T22:59:43.000000Z",
+                                    "name": {
+                                        "it": "119 - Asciano - Scarpa d'Orlando",
+                                        "en": "119 - Asciano - Scarpa d'Orlando"
+                                    }
+                                },
+                                "geometry": {
+                                    "type": "LineString",
+                                    "coordinates": [
+                                        [
+                                            10.4685531,
+                                            43.7494983
+                                        ],
+                                        [
+                                            10.4686648,
+                                            43.7494112
+                                        ]
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {},
+                                "example": {
+                                    "type": "Feature",
+                                    "properties": {
+                                        "id": 27060,
+                                        "created_at": "2022-09-07T07:47:11.000000Z",
+                                        "updated_at": "2024-01-07T22:59:43.000000Z",
+                                        "name": {
+                                            "it": "119 - Asciano - Scarpa d'Orlando",
+                                            "en": "119 - Asciano - Scarpa d'Orlando"
+                                        }
+                                    },
+                                    "geometry": {
+                                        "type": "LineString",
+                                        "coordinates": [
+                                            [
+                                                10.4685531,
+                                                43.7494983
+                                            ],
+                                            [
+                                                10.4686648,
+                                                43.7494112
+                                            ]
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input"
+                    }
+                }
+            }
         }
     }
 }

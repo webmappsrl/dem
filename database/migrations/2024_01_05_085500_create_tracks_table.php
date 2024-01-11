@@ -16,7 +16,7 @@ return new class () extends Migration {
             $table->string('name')->nullable();
             $table->unsignedBigInteger('source_id')->nullable();
             $table->json('tags')->nullable();
-            $table->integer('distance')->nullable();
+            $table->float('distance')->nullable();
             $table->integer('ele_max')->nullable();
             $table->integer('ele_min')->nullable();
             $table->integer('ele_from')->nullable();

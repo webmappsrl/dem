@@ -49,7 +49,7 @@ class CalculatePointElevationController extends Controller
      */
     public function getElevation($lng, $lat)
     {
-        $elevation = $this->calcPointElevation($lat, $lng);
+        $elevation = $this->calcPointElevation($lng, $lat);
         return response()->json(['ele' => $elevation]);
     }
 }
