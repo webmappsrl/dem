@@ -156,18 +156,25 @@ trait SlopeAndElevationTrait
         $duration_forward_bike = $this->calcDuration($distance, $ascent, 'bike');
         $duration_backward_bike = $this->calcDuration($distance, $descent, 'bike');
 
-        $track->ele_min = $ele_min;
-        $track->ele_max = $ele_max;
-        $track->ele_from = intval($smoothed_line_points[0]->smoothed_ele);
-        $track->ele_to = intval($smoothed_line_points[count($smoothed_line_points) - 1]->smoothed_ele);
-        $track->ascent = $ascent;
-        $track->descent = $descent;
-        $track->distance = $distance;
-        $track->duration_forward_hiking = $duration_forward_hiking;
-        $track->duration_backward_hiking = $duration_backward_hiking;
-        $track->duration_forward_bike = $duration_forward_bike;
-        $track->duration_backward_bike = $duration_backward_bike;
-        $track->round_trip = $round_trip;
+
+        $geojson = [];
+        $geojson['type'] = 'Feature';
+        $geojson['properties'] = [
+            'ele_min' => $ele_min,
+            'ele_max' => $ele_max,
+            'ele_from' => intval($smoothed_line_points[0]->smoothed_ele),
+            'ele_to' => intval($smoothed_line_points[count($smoothed_line_points) - 1]->smoothed_ele),
+            'ascent' => $ascent,
+            'descent' => $descent,
+            'distance' => $distance,
+            'duration_forward_hiking' => $duration_forward_hiking,
+            'duration_backward_hiking' => $duration_backward_hiking,
+            'duration_forward_bike' => $duration_forward_bike,
+            'duration_backward_bike' => $duration_backward_bike,
+            'round_trip' => $round_trip,
+        ];
+
+        $geojson['geometry'] = $resampled_line;
 
         $track->save();
 
