@@ -39,7 +39,14 @@ At the end run install command to for this instance
 ```bash
 geobox_install ${instance name}
 ```
-
+Make sure that postgis_raster extention is created
+````
+docker exec -i postgres_dem psql -c "CREATE EXTENSION postgis_raster CASCADE;" -U dem
+````
+Run this command from out side the docker to import DEM of monte pisano
+````
+php artisan dem:import-monte-pisano-dem 
+```
 *Important NOTE*: 
 - Update your local repository of Geobox following its [Aliases instructions](https://github.com/webmappsrl/geobox#aliases-and-global-shell-variable). Make sure that you have set the environment variable GEOBOX_PATH correctly.
 - Make sure that the version of wm-package of your instance is at leaset 1.1. Use command:
