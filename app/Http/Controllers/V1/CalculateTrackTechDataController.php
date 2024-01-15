@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\V1;
 
 use App\Http\Controllers\Controller;
-use App\Models\Track;
+use App\Models\track;
 use App\Traits\SlopeAndElevationTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
