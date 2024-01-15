@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoretrackRequest;
-use App\Http\Requests\UpdatetrackRequest;
-use App\Models\track;
+use App\Http\Requests\StoreTrackRequest;
+use App\Http\Requests\UpdateTrackRequest;
+use App\Models\Track;
 
 class TrackController extends Controller
 {
@@ -27,7 +27,7 @@ class TrackController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoretrackRequest $request)
+    public function store(StoreTrackRequest $request)
     {
         //
     }
@@ -35,7 +35,7 @@ class TrackController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(track $track)
+    public function show(Track $track)
     {
         //
     }
@@ -43,7 +43,7 @@ class TrackController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(track $track)
+    public function edit(Track $track)
     {
         //
     }
@@ -51,7 +51,7 @@ class TrackController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdatetrackRequest $request, track $track)
+    public function update(UpdateTrackRequest $request, Track $track)
     {
         //
     }
@@ -59,7 +59,7 @@ class TrackController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(track $track)
+    public function destroy(Track $track)
     {
         //
     }
