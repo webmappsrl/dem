@@ -125,11 +125,13 @@ trait SlopeAndElevationTrait
         // Extracts individual points from resampled geometry
         $resampled_line_points = DB::select("SELECT (dp).path[1] AS index, (dp).geom AS geom FROM (SELECT (ST_DumpPoints('$resampled_line')) as dp) as Foo");
 
+        $geojson_coordinates = [];
         // Calcola Elevation di ogni punto
         foreach ($resampled_line_points as $point) {
             $point_geom = DB::select("SELECT ST_Transform('$point->geom'::geometry,4326) AS geom")[0]->geom;
             $coordinates = DB::select("SELECT ST_X('$point_geom') as x,ST_Y('$point_geom') AS y")[0];
             $point->ele = $this->calcPointElevation($coordinates->x, $coordinates->y);
+            $geojson_coordinates[] = [$coordinates->x, $coordinates->y, $point->ele];
         }
 
         // Aggiunge smoothed_ele con i valori di elevazione smoothati. Il parametro per la media è settato a 5 punti prima e 5 punti dopo
@@ -174,10 +176,11 @@ trait SlopeAndElevationTrait
             'round_trip' => $round_trip,
         ];
 
-        $geojson['geometry'] = $resampled_line;
+        $geojson['geometry'] = [
+            'type' => 'LineString',
+            'coordinates' => $geojson_coordinates
+        ];
 
-        $track->save();
-
-        return $track;
+        return $geojson;
     }
 }

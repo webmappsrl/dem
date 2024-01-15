@@ -18,6 +18,7 @@ services:
   db:
     platform: linux/amd64
     image: postgis/postgis:14-3.3
+    shm_size: 512m
     container_name: "postgres_${APP_NAME}"
     restart: always
     environment:
