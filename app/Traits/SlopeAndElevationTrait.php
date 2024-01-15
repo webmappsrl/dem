@@ -65,7 +65,7 @@ trait SlopeAndElevationTrait
         return $result;
     }
 
-    public function calcAscentDescentEleMinEleMax($data, &$ascent, &$descent, &$ele_max, &$ele_min)
+    public function calcAscentDescent($data, &$ascent, &$descent)
     {
         // Iterate through each data point
         for ($i = 0; $i < count($data) - 1; $i++) {
@@ -75,18 +75,24 @@ trait SlopeAndElevationTrait
             if ($currentEle && $nextEle) {
                 $diff = $nextEle - $currentEle;
                 if ($diff > 0) {
-                    $ascent += intval($diff);
+                    $ascent += $diff;
                 } else {
-                    $descent += abs(intval($diff));
+                    $descent += abs($diff);
                 }
             }
+        }
+    }
 
-            if ($data[$i]->smoothed_ele) {
-                if (!$ele_min || $data[$i]->smoothed_ele < $ele_min) {
-                    $ele_min = intval($data[$i]->smoothed_ele);
+    public function calcEleMinEleMax($data, &$ele_max, &$ele_min)
+    {
+        // Iterate through each data point
+        for ($i = 0; $i < count($data) - 1; $i++) {
+            if ($data[$i]->ele) {
+                if (!$ele_min || $data[$i]->ele < $ele_min) {
+                    $ele_min = intval($data[$i]->ele);
                 }
-                if (!$ele_max || $data[$i]->smoothed_ele > $ele_max) {
-                    $ele_max = intval($data[$i]->smoothed_ele);
+                if (!$ele_max || $data[$i]->ele > $ele_max) {
+                    $ele_max = intval($data[$i]->ele);
                 }
             }
         }
@@ -117,6 +123,17 @@ trait SlopeAndElevationTrait
         $SimplifyPreserveTopology = DB::select("SELECT ST_SimplifyPreserveTopology(ST_Transform('$track->geometry'::geometry, 3035), $simplify_preserve_topology_param) AS geom")[0]->geom;
 
         // Extracts individual points from simplified geometry
+        $original_track_points = DB::select("SELECT (dp).path[1] AS index, (dp).geom AS geom FROM (SELECT (ST_DumpPoints(ST_Transform('$track->geometry'::geometry, 3035))) as dp) as Foo");
+        // Calcola Elevation di ogni punto
+        foreach ($original_track_points as $point) {
+            $point_geom = DB::select("SELECT ST_Transform('$point->geom'::geometry,4326) AS geom")[0]->geom;
+            $coordinates = DB::select("SELECT ST_X('$point_geom') as x,ST_Y('$point_geom') AS y")[0];
+            $point->ele = $this->calcPointElevation($coordinates->x, $coordinates->y);
+            $geojson_coordinates[] = [$coordinates->x, $coordinates->y, $point->ele];
+        }
+
+        // TODO: DELETE THIS Line because it's not being used
+        // Extracts individual points from simplified geometry
         $track_points = DB::select("SELECT (dp).path[1] AS index, (dp).geom AS geom FROM (SELECT (ST_DumpPoints('$SimplifyPreserveTopology')) as dp) as Foo");
 
         // Creates a linestring geometry with points resampled every 12.5 meters
@@ -140,14 +157,15 @@ trait SlopeAndElevationTrait
         // Calculate Ascent and Descent
         $ascent = 0;
         $descent = 0;
-        // Calculate ele_min and ele_max
+        $this->calcAscentDescent($smoothed_line_points, $ascent, $descent);
+
+        // Calculate ele_min and ele_max from the Original Track geometry
         $ele_min = null;
         $ele_max = null;
+        $this->calcEleMinEleMax($original_track_points, $ele_max, $ele_min);
 
-        $this->calcAscentDescentEleMinEleMax($smoothed_line_points, $ascent, $descent, $ele_max, $ele_min);
-
-        // Calculate Distance
-        $distance = intval(DB::select("SELECT ST_Length('$resampled_line') AS distance")[0]->distance) / 1000;
+        // Calculate Distance from the Original Track geometry
+        $distance = intval(DB::select("SELECT ST_Length(ST_Transform('$track->geometry'::geometry, 3035)) AS distance")[0]->distance) / 1000;
 
         // Calculate Round Trip
         $round_trip = DB::select("SELECT ST_Distance(ST_StartPoint('$resampled_line'), ST_EndPoint('$resampled_line')) < $round_trip_max_distance_param AS round_trip")[0]->round_trip;
@@ -166,8 +184,8 @@ trait SlopeAndElevationTrait
             'ele_max' => $ele_max,
             'ele_from' => intval($smoothed_line_points[0]->smoothed_ele),
             'ele_to' => intval($smoothed_line_points[count($smoothed_line_points) - 1]->smoothed_ele),
-            'ascent' => $ascent,
-            'descent' => $descent,
+            'ascent' => intval($ascent),
+            'descent' => intval($descent),
             'distance' => $distance,
             'duration_forward_hiking' => $duration_forward_hiking,
             'duration_backward_hiking' => $duration_backward_hiking,
