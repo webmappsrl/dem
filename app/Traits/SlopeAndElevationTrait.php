@@ -46,14 +46,7 @@ trait SlopeAndElevationTrait
 
         // Extracts individual points from simplified geometry
         $original_track_points = DB::select("SELECT (dp).path[1] AS index, (dp).geom AS geom FROM (SELECT (ST_DumpPoints(ST_Transform('$track->geometry'::geometry, 3035))) as dp) as Foo");
-        $geojson_coordinates = [];
-        // Calcola Elevation di ogni punto
-        foreach ($original_track_points as $point) {
-            $point_geom = DB::select("SELECT ST_Transform('$point->geom'::geometry,4326) AS geom")[0]->geom;
-            $coordinates = DB::select("SELECT ST_X('$point_geom') as x,ST_Y('$point_geom') AS y")[0];
-            $point->ele = $this->calcPointElevation($coordinates->x, $coordinates->y);
-            $geojson_coordinates[] = [$coordinates->x, $coordinates->y, $point->ele];
-        }
+        $geojson_coordinates = $this->calcOriginalTrackElevations($original_track_points);
 
         // TODO: DELETE THIS Line because it's not being used
         // Extracts individual points from simplified geometry
@@ -198,5 +191,18 @@ trait SlopeAndElevationTrait
         } elseif ($type == 'bike') {
             return intval((($distance + $height * 3 / 100) / $avarage_biking_speed_param) * 60);
         }
+    }
+
+    public function calcOriginalTrackElevations($original_track_points)
+    {
+        $geojson_coordinates = [];
+        // Calcola Elevation di ogni punto
+        foreach ($original_track_points as $point) {
+            $point_geom = DB::select("SELECT ST_Transform('$point->geom'::geometry,4326) AS geom")[0]->geom;
+            $coordinates = DB::select("SELECT ST_X('$point_geom') as x,ST_Y('$point_geom') AS y")[0];
+            $point->ele = $this->calcPointElevation($coordinates->x, $coordinates->y);
+            $geojson_coordinates[] = [$coordinates->x, $coordinates->y, $point->ele];
+        }
+        return $geojson_coordinates;
     }
 }

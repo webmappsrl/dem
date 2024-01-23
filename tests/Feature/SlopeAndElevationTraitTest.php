@@ -1,7 +1,7 @@
 <?php
 
 use PHPUnit\Framework\TestCase;
-
+use App\Traits\SlopeAndElevationTrait; // Import the SlopeAndElevationTrait class
 class SlopeAndElevationTraitTest extends TestCase
 {
     public function testCalcSmoothedElevation()
