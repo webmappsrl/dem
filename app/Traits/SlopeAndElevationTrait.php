@@ -84,11 +84,11 @@ trait SlopeAndElevationTrait
         // Calculate Round Trip
         $round_trip = DB::select("SELECT ST_Distance(ST_StartPoint('$resampled_line'), ST_EndPoint('$resampled_line')) < $round_trip_max_distance_param AS round_trip")[0]->round_trip;
 
-        // Calculate Duration
-        $duration_forward_hiking = $this->calcDuration($distance, $ascent, 'hiking');
-        $duration_backward_hiking = $this->calcDuration($distance, $descent, 'hiking');
-        $duration_forward_bike = $this->calcDuration($distance, $ascent, 'bike');
-        $duration_backward_bike = $this->calcDuration($distance, $descent, 'bike');
+        // Calculate Duration and set it to the nearest 15 minutes
+        $duration_forward_hiking = ceil($this->calcDuration($distance, $ascent, 'hiking') / 15) * 15;
+        $duration_backward_hiking = ceil($this->calcDuration($distance, $descent, 'hiking') / 15) * 15;
+        $duration_forward_bike = ceil($this->calcDuration($distance, $ascent, 'bike') / 15) * 15;
+        $duration_backward_bike = ceil($this->calcDuration($distance, $descent, 'bike') / 15) * 15;
 
 
         $geojson = [];
@@ -100,7 +100,7 @@ trait SlopeAndElevationTrait
             'ele_to' => intval($smoothed_line_points[count($smoothed_line_points) - 1]->smoothed_ele),
             'ascent' => intval($ascent),
             'descent' => intval($descent),
-            'distance' => $distance,
+            'distance' => round($distance, 1),
             'duration_forward_hiking' => $duration_forward_hiking,
             'duration_backward_hiking' => $duration_backward_hiking,
             'duration_forward_bike' => $duration_forward_bike,
