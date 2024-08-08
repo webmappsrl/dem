@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers\V1;
 
+use App\Http\Controllers\Controller;
 use App\Models\track;
+use App\Traits\SlopeAndElevationTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use App\Http\Controllers\Controller;
-use App\Traits\SlopeAndElevationTrait;
 
 class CalculateTrackTechDataController extends Controller
 {
@@ -319,13 +318,6 @@ class CalculateTrackTechDataController extends Controller
     {
         $feature = $request->input();
         $geometry = DB::select("SELECT ST_Force2D(ST_LineMerge(ST_GeomFromGeoJSON('" . json_encode($feature['geometry']) . "'))) As wkt")[0]->wkt;
-
-        //if the geometry is not a linestring after ST_LineMerge then return a json with an error
-        $geometryType = DB::select("SELECT ST_GeometryType(ST_GeomFromGeoJSON('" . $geometry . "')) As wkt")[0]->wkt;
-        if ($geometryType != "ST_LineString") {
-            Log::error('The geometry is not correct for the feature ' . $feature['properties']['id']);
-            return response()->json(['error' => 'The geometry is not correct for the feature with id ' . $feature['properties']['id']], 400);
-        }
 
         $track = Track::create([
             'source_id' => $feature['properties']['id'],

@@ -52,6 +52,11 @@ trait SlopeAndElevationTrait
         // Extracts individual points from simplified geometry
         $track_points = DB::select("SELECT (dp).path[1] AS index, (dp).geom AS geom FROM (SELECT (ST_DumpPoints('$SimplifyPreserveTopology')) as dp) as Foo");
 
+        //check if $simplyfiPreserveTopology is a multilinestring
+        $geomType = DB::select("SELECT ST_GeometryType('$SimplifyPreserveTopology') AS geom_type")[0]->geom_type;
+        if ($geomType != 'ST_LineString') {
+            return ['error' => 'Invalid geometry for track with id: ' . $track->source_id];
+        }
         // Creates a linestring geometry with points resampled every 12.5 meters
         $resampled_line = DB::select("SELECT ST_LineFromMultiPoint(ST_LineInterpolatePoints('$SimplifyPreserveTopology', $sampling_step_param/ST_Length('$SimplifyPreserveTopology'))) AS geom")[0]->geom;
 
