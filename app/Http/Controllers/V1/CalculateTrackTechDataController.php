@@ -328,6 +328,11 @@ class CalculateTrackTechDataController extends Controller
 
         $track->delete();
 
+        if(isset($geojson['error'])){
+
+            return response()->json($geojson, 400);
+        }
+
         return response()->json($geojson);
     }
 
