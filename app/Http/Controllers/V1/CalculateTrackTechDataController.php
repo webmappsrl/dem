@@ -321,7 +321,7 @@ class CalculateTrackTechDataController extends Controller
         $geometry = DB::select("SELECT ST_Force2D(ST_LineMerge(ST_GeomFromGeoJSON('" . json_encode($feature['geometry']) . "'))) As wkt")[0]->wkt;
 
         //if the geometry is not a linestring after ST_LineMerge then return a json with an error
-        $geometryType = DB::select("SELECT ST_GeometryType(ST_GeomFromGeoJSON('" . json_encode($feature['geometry']) . "')) As wkt")[0]->wkt;
+        $geometryType = DB::select("SELECT ST_GeometryType(ST_GeomFromGeoJSON('" . $geometry . "')) As wkt")[0]->wkt;
         if ($geometryType != "ST_LineString") {
             Log::error('The geometry is not correct for the feature ' . $feature['properties']['id']);
             return response()->json(['error' => 'The geometry is not correct for the feature with id ' . $feature['properties']['id']], 400);
