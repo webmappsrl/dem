@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers\V1;
 
-use App\Http\Controllers\Controller;
 use App\Models\track;
-use App\Traits\SlopeAndElevationTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
+use App\Traits\SlopeAndElevationTrait;
 
 class CalculateTrackTechDataController extends Controller
 {
