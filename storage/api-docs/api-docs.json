@@ -2,87 +2,86 @@
     "openapi": "3.0.0",
     "info": {
         "title": "DEM",
-        "description": "Api documentation",
+        "description": "This Swagger documentation provides details about the DEM (Digital Elevation Model) API, designed to offer advanced functionality for managing and analyzing elevation models. It includes endpoints to retrieve the elevation of a specific point based on geographic coordinates, analyze technical data for tracks provided in GeoJSON format, and generate 3D representations of paths. The API is optimized for integration with GIS platforms and requires relevant elevation data to be preloaded in the database for accurate responses.",
         "contact": {
             "email": "alessiopiccioli@webmapp.it"
         },
-        "version": "1.0.0",
-        "x-logo": {
-            "url": "http://localhost:8000/assets/images/logo_sosec.jpg"
-        }
+        "version": "1.0.0"
     },
     "paths": {
-        "/api/v1/elevation/{lng}/{lat}": {
-            "get": {
-                "tags": [
-                    "Elevation"
-                ],
-                "summary": "Get Elevation",
-                "description": "Retrieve the elevation of a point based on provided longitude and latitude.",
-                "operationId": "getElevation",
-                "parameters": [
-                    {
-                        "name": "lng",
-                        "in": "path",
-                        "description": "Longitude of the point",
-                        "required": true,
-                        "schema": {
-                            "type": "number",
-                            "format": "float"
-                        }
-                    },
-                    {
-                        "name": "lat",
-                        "in": "path",
-                        "description": "Latitude of the point",
-                        "required": true,
-                        "schema": {
-                            "type": "number",
-                            "format": "float"
-                        }
+      "/api/v1/elevation/{lng}/{lat}": {
+        "get": {
+            "tags": [
+                "Dem standard"
+            ],
+            "summary": "Get Elevation",
+            "description": "Retrieve the elevation of a point based on provided longitude and latitude. Note: To respond accurately, the API requires that relevant elevation data for the test example or target coordinates be preloaded into the database. For instance, the default test using coordinates lng=10.4956085, lat=43.7580988 (Monte Faeta, 830 m) will only work if data covering this point has been loaded.",
+            "operationId": "getElevation",
+            "parameters": [
+                {
+                    "name": "lng",
+                    "in": "path",
+                    "description": "Longitude of the point",
+                    "required": true,
+                    "schema": {
+                        "type": "number",
+                        "format": "float",
+                        "default": 10.4956085
                     }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "elevation": {
-                                            "type": "number",
-                                            "format": "float",
-                                            "example": 0
-                                        }
-                                    },
-                                    "type": "object"
-                                }
+                },
+                {
+                    "name": "lat",
+                    "in": "path",
+                    "description": "Latitude of the point",
+                    "required": true,
+                    "schema": {
+                        "type": "number",
+                        "format": "float",
+                        "default": 43.7580988
+                    }
+                }
+            ],
+            "responses": {
+                "200": {
+                    "description": "Successful operation",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "elevation": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 0
+                                    }
+                                },
+                                "type": "object"
                             }
                         }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "error": {
-                                            "type": "string",
-                                            "example": "Failed to retrieve elevation"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
+                    }
+                },
+                "500": {
+                    "description": "Internal server error",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "error": {
+                                        "type": "string",
+                                        "example": "Failed to retrieve elevation"
+                                    }
+                                },
+                                "type": "object"
                             }
                         }
                     }
                 }
             }
-        },
-        "/api/v1/track": {
+        }
+    },
+      "/api/v1/track": {
             "post": {
                 "tags": [
-                    "Tech Data"
+                    "Dem standard"
                 ],
                 "summary": "Get technical data for a track",
                 "operationId": "8fe610cebbc877c15953ad6ec76b91ba",
@@ -1398,7 +1397,7 @@
         "/api/v1/track3d": {
             "post": {
                 "tags": [
-                    "3D Data"
+                    "Dem standard"
                 ],
                 "summary": "Get 3D data for a track",
                 "operationId": "bdf70789a340035786f4ae51e6a278b2",

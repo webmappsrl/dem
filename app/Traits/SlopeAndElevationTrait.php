@@ -7,6 +7,13 @@ use stdClass;
 
 trait SlopeAndElevationTrait
 {
+    /**
+     * Calculate the elevation of a point given its longitude and latitude.
+     *
+     * @param float $lng Longitude of the point.
+     * @param float $lat Latitude of the point.
+     * @return int|null Elevation of the point or null if not found.
+     */
     public function calcPointElevation($lng, $lat)
     {
         $result = DB::table('o_4_dem')
@@ -33,6 +40,12 @@ trait SlopeAndElevationTrait
         return ($result && $result->ele) ? intval($result->ele) : null;
     }
 
+    /**
+     * Calculate the technical data for a given track.
+     *
+     * @param object $track The track object containing track data.
+     * @return void
+     */
     public function calcTrackTechData($track)
     {
         // Get tech params from config
@@ -121,6 +134,13 @@ trait SlopeAndElevationTrait
         return $geojson;
     }
 
+    /**
+     * Calculate the smoothed elevation for a given set of data.
+     *
+     * @param array $data The data set containing elevation points.
+     * @param int $smoothed_elevation_param The parameter for smoothing elevation (default is 5).
+     * @return array The smoothed elevation data.
+     */
     public function calcSmoothedElevation($data, $smoothed_elevation_param = 5)
     {
         $result = [];
