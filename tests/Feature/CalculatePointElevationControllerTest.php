@@ -9,6 +9,16 @@ use Tests\TestCase;
 
 class CalculatePointElevationControllerTest extends TestCase
 {
+ 
+    /**
+     * Set up the test environment.
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Artisan::call('dem:import-monte-pisano-dem');
+    }
+
     // use RefreshDatabase;
     use WithFaker;
     /**
@@ -19,7 +29,6 @@ class CalculatePointElevationControllerTest extends TestCase
      */
     public function get_elevation_api_responds_200()
     {
-        Artisan::call('dem:import-monte-pisano-dem');
 
         // Define a longitude and latitude for the test
         $lng = 10.553454123437408;
@@ -43,8 +52,6 @@ class CalculatePointElevationControllerTest extends TestCase
      */
     public function get_elevation_api_responds_currectly()
     {
-        Artisan::call('dem:import-monte-pisano-dem');
-
         // Define a longitude and latitude for the test
         $lng = 10.553454123437408;
         $lat = 43.750621703966026;

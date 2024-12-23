@@ -7,6 +7,8 @@ use App\Models\track;
 use App\Traits\SlopeAndElevationTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+
 
 class CalculateTrackTechDataController extends Controller
 {
