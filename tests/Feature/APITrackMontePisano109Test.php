@@ -15,7 +15,8 @@ class ApiTrackMontePisano109Test extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        Artisan::call('dem:import-monte-pisano-dem');
+        Artisan::call('dem:delete', ['--force' => true]);
+        Artisan::call('dem:import', ['file' => base_path('tests/Feature/Stubs/montepisano_25x25_data.sql')]);
     }
 
     /**
