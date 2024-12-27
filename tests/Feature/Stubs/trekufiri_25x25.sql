@@ -71,5 +71,3 @@ SELECT AddRasterConstraints('','dem','rast',TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,
 SELECT AddRasterConstraints('','o_4_dem','rast',TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE);
 SELECT AddOverviewConstraints('','o_4_dem','rast','','dem','rast',4);
 END;
--- VACUUM ANALYZE "dem";
--- VACUUM ANALYZE "o_4_dem";
