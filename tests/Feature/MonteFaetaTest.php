@@ -15,7 +15,8 @@ class MonteFaetaTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        Artisan::call('dem:import', ['file' => base_path('tests/Feature/Stubs/monte_faeta_25x25_4.sql')]);
+        Artisan::call('dem:delete', ['--force' => true]);
+        Artisan::call('dem:import', ['file' => base_path('tests/Feature/Stubs/monte_faeta_25x25_data.sql')]);
     }
 
     /**
