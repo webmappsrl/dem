@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Artisan;
 use Tests\TestCase;
 use \Illuminate\Support\Facades\File;
 
-class TrekufiriTest extends TestCase
+class MacugnagaTest extends TestCase
 {
  
     /**
@@ -16,11 +16,11 @@ class TrekufiriTest extends TestCase
     {
         parent::setUp();
         Artisan::call('dem:delete', ['--force' => true]);
-        Artisan::call('dem:import', ['file' => base_path('tests/Feature/Stubs/trekufiri_25x25_data.sql')]);
+        Artisan::call('dem:import', ['file' => base_path('tests/Feature/Stubs/macugnaga_25x25_data.sql')]);
     }
 
     /**
-     * Test the Trekufiri peak (Kosovo) and other known points with the tests/Feature/Stubs/trekufiri_25x25_4.sql DEM data,
+    * Test the Macugnaga area (Italy) and other known points with the tests/Feature/Stubs/macugnaga_25x25_data.sql DEM data,
      * and check if the elevation is correct with the API /api/v1/ele/{lat}/{lon}
      */
     public function testElevation()
@@ -28,9 +28,10 @@ class TrekufiriTest extends TestCase
         $tolerance = 0.05;
         
         $points = [
-            ['lng' => 20.079188, 'lat' => 42.555497, 'expected' => 2366 ], // Trekufiri: https://www.openstreetmap.org/node/9150949574
-            ['lng' => 20.107942, 'lat' => 42.574560, 'expected' => 2502 ], // Maja e Ropes: https://www.openstreetmap.org/node/4510978497
-            ['lng' => 20.106787, 'lat' => 42.558123, 'expected' =>  1855 ] // Gacaferi Guesthouse: https://www.openstreetmap.org/node/12250464783 
+            ['lng' => 7.968022, 'lat' => 45.967325, 'expected' => 1305 ], // Staffa: https://www.openstreetmap.org/node/9427910483
+            ['lng' => 7.932424, 'lat' => 45.947910, 'expected' => 2754 ], // Punta Battisti: https://www.openstreetmap.org/node/7817884364
+            ['lng' => 7.954499, 'lat' => 45.947575, 'expected' => 2738 ], // Pizzo Nero: https://www.openstreetmap.org/node/2445421379
+            ['lng' => 7.939741, 'lat' => 45.937182, 'expected' => 3215 ] // Pizzo Bianco: https://www.openstreetmap.org/node/401234279
         ];
 
         foreach ($points as $point) {
