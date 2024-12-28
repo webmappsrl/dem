@@ -22,7 +22,7 @@ trait SlopeAndElevationTrait
                     rast,
                     ST_Transform(
                         ST_SetSRID(ST_MakePoint($lng, $lat), 4326),
-                        3035
+                        4326
                     )
                 ) AS ele
             "))
@@ -31,7 +31,7 @@ trait SlopeAndElevationTrait
                     rast,
                     ST_Transform(
                         ST_SetSRID(ST_MakePoint($lng, $lat), 4326),
-                        3035
+                        4326
                     )
                 )
             ")
