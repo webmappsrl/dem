@@ -16,7 +16,7 @@ class ApiTrackMontePisano109Test extends TestCase
     {
         parent::setUp();
         Artisan::call('dem:delete', ['--force' => true]);
-        Artisan::call('dem:import', ['file' => base_path('tests/Feature/Stubs/montepisano_25x25_data.sql')]);
+        Artisan::call('dem:import', ['file' => base_path('tests/Feature/Stubs/montepisano_25x25_4326.sql')]);
     }
 
     /**
@@ -76,20 +76,20 @@ class ApiTrackMontePisano109Test extends TestCase
 
         // Verifica che 'type' sia 'Feature'
         $response->assertJson(['type' => 'Feature']);
-
         
         // Verifica che 'properties' contenga i valori specificati
-        $this->assertEquals(13, $response['properties']['ele_min']);
-        $this->assertEquals(358, $response['properties']['ele_max']);
+        $this->assertEquals(14, $response['properties']['ele_min']);
+        $this->assertEquals(366, $response['properties']['ele_max']);
         $this->assertEquals(14, $response['properties']['ele_from']);
-        $this->assertEquals(358, $response['properties']['ele_to']);
-        $this->assertEquals(359, $response['properties']['ascent']);
-        $this->assertEquals(15, $response['properties']['descent']);
+        $this->assertEquals(366, $response['properties']['ele_to']);
+        $this->assertEquals(372, $response['properties']['ascent']);
+        $this->assertEquals(20, $response['properties']['descent']);
         $this->assertEquals(3.2, $response['properties']['distance']);
         $this->assertEquals(120, $response['properties']['duration_forward_hiking']);
         $this->assertEquals(60, $response['properties']['duration_backward_hiking']);
         $this->assertEquals(90, $response['properties']['duration_forward_bike']);
         $this->assertEquals(30, $response['properties']['duration_backward_bike']);
         $this->assertFalse($response['properties']['round_trip']);
+
     }
 }

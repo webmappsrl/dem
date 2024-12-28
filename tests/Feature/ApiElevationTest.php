@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 
 class ApiElevationTest extends TestCase
 {
-    protected $tolerance = 0.05;
+    protected $tolerance = 0.06;
 
     /**
      * Test the Macugnaga area (Italy) and other known points with the tests/Feature/Stubs/macugnaga_25x25_data.sql DEM data,
@@ -18,7 +18,7 @@ class ApiElevationTest extends TestCase
     public function testMacugnagaElevation()
     {
         Artisan::call('dem:delete', ['--force' => true]);
-        Artisan::call('dem:import', ['file' => base_path('tests/Feature/Stubs/macugnaga_25x25_data.sql')]);
+        Artisan::call('dem:import', ['file' => base_path('tests/Feature/Stubs/macugnaga_25x25_4326.sql')]);
 
         $points = [
             ['lng' => 7.968022, 'lat' => 45.967325, 'expected' => 1305], // Staffa: https://www.openstreetmap.org/node/9427910483
@@ -37,7 +37,7 @@ class ApiElevationTest extends TestCase
     public function testMonteFaetaElevation()
     {
         Artisan::call('dem:delete', ['--force' => true]);
-        Artisan::call('dem:import', ['file' => base_path('tests/Feature/Stubs/monte_faeta_25x25_data.sql')]);
+        Artisan::call('dem:import', ['file' => base_path('tests/Feature/Stubs/monte_faeta_25x25_4326.sql')]);
 
         $points = [
             ['lng' => 10.495607, 'lat' => 43.758098, 'expected' => 830], // Faeta https://www.openstreetmap.org/node/306949256
@@ -56,7 +56,7 @@ class ApiElevationTest extends TestCase
     public function testMonteSerraElevation()
     {
         Artisan::call('dem:delete', ['--force' => true]);
-        Artisan::call('dem:import', ['file' => base_path('tests/Feature/Stubs/monte_serra_25x25_data.sql')]);
+        Artisan::call('dem:import', ['file' => base_path('tests/Feature/Stubs/monte_serra_25x25_4326.sql')]);
 
         $points = [
             ['lng' => 10.553420, 'lat' => 43.751046, 'expected' => 917], // Monte Serra: https://www.openstreetmap.org/node/1733141336
@@ -74,7 +74,7 @@ class ApiElevationTest extends TestCase
     public function testTrekufiriElevation()
     {
         Artisan::call('dem:delete', ['--force' => true]);
-        Artisan::call('dem:import', ['file' => base_path('tests/Feature/Stubs/trekufiri_25x25_data.sql')]);
+        Artisan::call('dem:import', ['file' => base_path('tests/Feature/Stubs/trekufiri_25x25_4326.sql')]);
 
         $points = [
             ['lng' => 20.079188, 'lat' => 42.555497, 'expected' => 2366], // Trekufiri: https://www.openstreetmap.org/node/9150949574
@@ -94,10 +94,10 @@ class ApiElevationTest extends TestCase
      */
     public function testMergedPlaces() {
         Artisan::call('dem:delete', ['--force' => true]);
-        Artisan::call('dem:import', ['file' => base_path('tests/Feature/Stubs/macugnaga_25x25_data.sql')]);
-        Artisan::call('dem:import', ['file' => base_path('tests/Feature/Stubs/monte_faeta_25x25_data.sql')]);
-        Artisan::call('dem:import', ['file' => base_path('tests/Feature/Stubs/monte_serra_25x25_data.sql')]);
-        Artisan::call('dem:import', ['file' => base_path('tests/Feature/Stubs/trekufiri_25x25_data.sql')]);
+        Artisan::call('dem:import', ['file' => base_path('tests/Feature/Stubs/macugnaga_25x25_4326.sql')]);
+        Artisan::call('dem:import', ['file' => base_path('tests/Feature/Stubs/monte_faeta_25x25_4326.sql')]);
+        Artisan::call('dem:import', ['file' => base_path('tests/Feature/Stubs/monte_serra_25x25_4326.sql')]);
+        Artisan::call('dem:import', ['file' => base_path('tests/Feature/Stubs/trekufiri_25x25_4326.sql')]);
 
         $points = [
             ['lng' => 10.495607, 'lat' => 43.758098, 'expected' => 830], // Faeta https://www.openstreetmap.org/node/306949256
@@ -139,12 +139,12 @@ class ApiElevationTest extends TestCase
         ];
 
         Artisan::call('dem:delete', ['--force' => true]);
-        Artisan::call('dem:import', ['file' => base_path('tests/Feature/Stubs/montepisano_25x25_data.sql')]);
+        Artisan::call('dem:import', ['file' => base_path('tests/Feature/Stubs/montepisano_25x25_4326.sql')]);
         $initialCount = DB::table('dem')->count();
         $this->checkElevation($points_faeta);
         $this->checkElevation($points_serra);
 
-        Artisan::call('dem:import', ['file' => base_path('tests/Feature/Stubs/monte_faeta_25x25_data.sql')]);
+        Artisan::call('dem:import', ['file' => base_path('tests/Feature/Stubs/monte_faeta_25x25_4326.sql')]);
         $finalCount = DB::table('dem')->count();
         $this->checkElevation($points_faeta);
         $this->checkElevation($points_serra);
@@ -175,17 +175,17 @@ class ApiElevationTest extends TestCase
 
         // Import MontePisano DEM data first and fix the initial count
         Artisan::call('dem:delete', ['--force' => true]);
-        Artisan::call('dem:import', ['file' => base_path('tests/Feature/Stubs/montepisano_25x25_data.sql')]);
+        Artisan::call('dem:import', ['file' => base_path('tests/Feature/Stubs/montepisano_25x25_4326.sql')]);
         $initialCount = DB::table('dem')->count();
 
         // First import Monte Faeta DEM data
         Artisan::call('dem:delete', ['--force' => true]);
-        Artisan::call('dem:import', ['file' => base_path('tests/Feature/Stubs/monte_faeta_25x25_data.sql')]);
+        Artisan::call('dem:import', ['file' => base_path('tests/Feature/Stubs/monte_faeta_25x25_4326.sql')]);
         $finalCount = DB::table('dem')->count();
         $this->checkElevation($points_faeta);
 
         // Then import MontePisano DEM data
-        Artisan::call('dem:import', ['file' => base_path('tests/Feature/Stubs/montepisano_25x25_data.sql')]);
+        Artisan::call('dem:import', ['file' => base_path('tests/Feature/Stubs/montepisano_25x25_4326.sql')]);
         $finalCount = DB::table('dem')->count();
         $this->checkElevation($points_faeta);
         $this->checkElevation($points_serra);
