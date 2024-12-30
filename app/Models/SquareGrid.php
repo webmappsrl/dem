@@ -103,36 +103,54 @@ class SquareGrid extends Model
     }
 
     /**
-     * List square grids by country.
+     * List square grids by country codes.
      *
-     * This method retrieves an array of square grids filtered by the specified country code.
+     * This method retrieves an array of square grids filtered by the specified country codes.
      *
-     * @param string $countryCode The ISO 3166-1 alpha-2 country code.
-     * @return array An array of square grids for the specified country.
+     * @param string $countryCodes A comma-separated string of ISO 3166-1 alpha-2 country codes.
+     * @return array An array of square grids for the specified countries.
      */
-    public static function listByCountry(string $countryCode): array
+    public static function listByCountry(string $countryCodes): array
     {
-        return DB::table('square_grids')
+        $countryCodeArray = explode(',', $countryCodes);
+        $gridSquares = [];
+
+        foreach ($countryCodeArray as $countryCode) {
+            $squares = DB::table('square_grids')
             ->select('name')
             ->whereRaw("ST_Intersects(geom, (SELECT geom FROM countries WHERE code = ?))", [$countryCode])
             ->pluck('name')
             ->toArray();
+
+            $gridSquares = array_merge($gridSquares, $squares);
+        }
+
+        return array_unique($gridSquares);
     }
 
     /**
-     * Retrieve GeoJSON data for grid squares by country.
+     * Retrieve GeoJSON data for grid squares by country codes.
      *
-     * This method retrieves a GeoJSON FeatureCollection of grid squares filtered by the specified country code.
+     * This method retrieves a GeoJSON FeatureCollection of grid squares filtered by the specified country codes.
      *
-     * @param string $countryCode The ISO 3166-1 alpha-2 country code.
-     * @return string The GeoJSON FeatureCollection of grid squares for the specified country.
+     * @param string $countryCodes A comma-separated string of ISO 3166-1 alpha-2 country codes.
+     * @return string The GeoJSON FeatureCollection of grid squares for the specified countries.
+     * 
+     * TODO: remove duplicates
      */
-    public static function geojsonByCountry(string $countryCode): string
+    public static function geojsonByCountry(string $countryCodes): string
     {
-        $gridSquares = DB::table('square_grids')
-            ->select('name', DB::raw('ST_AsGeoJSON(geom) as geom'))
-            ->whereRaw("ST_Intersects(geom, (SELECT geom FROM countries WHERE code = ?))", [$countryCode])
-            ->get();
+        $countryCodeArray = explode(',', $countryCodes);
+        $gridSquares = collect();
+
+        foreach ($countryCodeArray as $countryCode) {
+            $squares = DB::table('square_grids')
+                ->select('name', DB::raw('ST_AsGeoJSON(geom) as geom'))
+                ->whereRaw("ST_Intersects(geom, (SELECT geom FROM countries WHERE code = ?))", [$countryCode])
+                ->get();
+
+            $gridSquares = $gridSquares->merge($squares);
+        }
 
         $features = $gridSquares->map(function ($gridSquare) {
             return [
