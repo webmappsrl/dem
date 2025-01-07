@@ -39,6 +39,7 @@ class CreateDEMStructureCommand extends Command
 
         // Read the SQL file
         $sql = <<<SQL
+        CREATE extension IF NOT EXISTS postgis_raster;
 -- Create the "dem" Table and related functions / triggers
 CREATE TABLE "dem" ("rid" serial PRIMARY KEY,"rast" raster,"filename" text);
 CREATE INDEX ON "dem" USING gist (st_convexhull("rast"));
@@ -92,6 +93,7 @@ SQL;
             $this->info('Importing DEM SQL file to database completed.');
         } catch (\Exception $e) {
             $this->error('Error importing DEM: ' . $e->getMessage());
+            throw $e;
         }
     }
 }
