@@ -16,8 +16,8 @@ jobs:
       - name: Info
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.HOSTDEV }}
-          username: ${{ secrets.USERNAMEDEV }}
-          port: ${{ secrets.PORTDEV }}
+          host: ${{ vars.HOSTDEV }}
+          username: ${{ vars.USERNAMEDEV }}
+          port: ${{ vars.PORTDEV }}
           key: ${{ secrets.SSHKEYDEV }}
           script: "cd /root/html/dem && git pull && docker exec php81_dem bash scripts/deploy_dev.sh"
