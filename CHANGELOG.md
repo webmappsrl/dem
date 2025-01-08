@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.0](https://github.com/webmappsrl/dem/compare/v1.0.0...v1.1.0) (2025-01-08)
+
+
+### Features
+
+* add ImportSquareCommand and ImportCountryCommand oc: 4605 ([9a7eaf3](https://github.com/webmappsrl/dem/commit/9a7eaf3d8f1523588893b4ac53d4799f941a06ac))
+
+
+### Miscellaneous Chores
+
+* removed phpunit test results from repo ([8c51111](https://github.com/webmappsrl/dem/commit/8c51111834f818a85d0f16cf4842cf946c6da7cc))
+
 ## 1.0.0 (2025-01-07)
 
 
