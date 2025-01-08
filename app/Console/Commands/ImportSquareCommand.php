@@ -18,7 +18,7 @@ class ImportSquareCommand extends Command
      * @var string
      */
     protected $signature = 'dem:import-square
-    {square : The grid square to import in the format "lat}_lng" or "mlat_mlng"}';
+    {square : The grid square to import in the format "lng_lat" or "mlng_mlat"}';
 
     /**
      * The console command description.
@@ -42,12 +42,14 @@ class ImportSquareCommand extends Command
         $srid = 4326;
         $awsFilePath = "eu_original/{$squareSize}/SQL/{$gridSquare}_{$squareSize}_{$srid}.sql";
         $fileContent = Storage::disk('wmmapdata')->get($awsFilePath);
-
         if (is_null($fileContent)) {
-            return false;
+            throw new \Exception("File not found: {$awsFilePath}");
         }
 
-        $localPath = Storage::put(basename($awsFilePath), $fileContent);
+        $localFilename = basename($awsFilePath);
+        $success = Storage::put($localFilename, $fileContent);
+        $localPath = Storage::path($localFilename);
+
         $returnState = Artisan::call('dem:import', ['file' => $localPath]);
         Storage::delete($localPath);
         return true;

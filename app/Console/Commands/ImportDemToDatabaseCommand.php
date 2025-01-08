@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Artisan;
 
@@ -65,6 +66,7 @@ class ImportDEMToDatabaseCommand extends Command
             $this->info('Importing DEM SQL file to database completed.');
         } catch (\Exception $e) {
             $this->error('Error importing DEM: ' . $e->getMessage());
+            Log::error('Error importing DEM: ' . $e->getMessage());
         }
     }
 }
