@@ -90,9 +90,9 @@ SQL;
         // Execute the SQL commands
         try {
             DB::connection()->getPdo()->exec($sql);
-            $this->info('Importing DEM SQL file to database completed.');
+            $this->info('Created DEM SQL tables needs.');
         } catch (\Exception $e) {
-            $this->error('Error importing DEM: ' . $e->getMessage());
+            $this->error('Error creating DEM SQL needs: ' . $e->getMessage());
             throw $e;
         }
     }
