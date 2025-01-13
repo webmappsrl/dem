@@ -14,7 +14,7 @@ class GridImporterService
     private function getInsertIntoQueries($sql): array
     {
         $matched = preg_match_all('#^INSERT INTO.+#m', $sql, $matches, PREG_SET_ORDER);
-        return $matches;
+        return collect($matches)->collapse()->toArray();
     }
 
     public function dispatchGridImportBatch($gridSquare, $country = false): int

@@ -2,15 +2,17 @@
 
 namespace App\Jobs;
 
+use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\SerializesModels;
 
 class SqlImportJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Batchable, Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     /**
      * Create a new job instance.
@@ -25,6 +27,18 @@ class SqlImportJob implements ShouldQueue
      */
     public function handle(): void
     {
-        //
+
+        DB::beginTransaction();
+
+        try {
+            DB::connection()->getPdo()->exec($this->sql);
+
+            DB::commit();
+            // all good
+        } catch (\Exception $e) {
+            DB::rollback();
+            // something went wrong
+            throw $e;
+        }
     }
 }
