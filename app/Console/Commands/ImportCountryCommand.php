@@ -3,12 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Models\SquareGrid;
-use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
+use App\Services\GridImporterService;
 use Symfony\Component\Console\Helper\ProgressBar;
-use Illuminate\Support\Facades\Artisan;
 
 class ImportCountryCommand extends ImportSquareCommand
 {
@@ -30,7 +26,7 @@ class ImportCountryCommand extends ImportSquareCommand
     /**
      * Execute the console command.
      */
-    public function handle()
+    public function handle(GridImporterService $service)
     {
         ProgressBar::setFormatDefinition('custom', ' [%bar%] %current%/%max% -- %message%');
 
@@ -41,25 +37,15 @@ class ImportCountryCommand extends ImportSquareCommand
         $bar->setFormat('custom');
         $bar->setMessage("Starting");
         $bar->start();
-        try {
-            foreach ($gridSquares as $gridSquare) {
-                $bar->setMessage("Handling $gridSquare");
 
-                $status = $this->importSquareSql($gridSquare);
-                if ($status === false) {
-                    $this->error("No file found for $gridSquare");
-                    $bar->advance();
-                    continue;
-                }
-
-                $bar->advance();
-            }
-
-            $bar->finish();
-        } catch (\Exception $e) {
-            $this->error($e->getMessage());
-            Log::error($e->getMessage());
+        foreach ($gridSquares as $gridSquare) {
+            $count = $service->dispatchGridImportBatch($gridSquare);
+            $bar->setMessage("$gridSquare - Dispatched $count jobs");
+            $bar->advance();
         }
-        $this->info("Import of {$this->argument('codes')} countries completed");
+
+        $bar->finish();
+
+        $this->info("Enqueued of {$this->argument('codes')} countries completed");
     }
 }

@@ -2,13 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Models\SquareGrid;
+use App\Services\GridImporterService;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
-use Symfony\Component\Console\Helper\ProgressBar;
-use Illuminate\Support\Facades\Artisan;
 
 class ImportSquareCommand extends Command
 {
@@ -30,28 +25,9 @@ class ImportSquareCommand extends Command
     /**
      * Execute the console command.
      */
-    public function handle()
+    public function handle(GridImporterService $service)
     {
-        $this->importSquareSql("Grid_" . $this->argument('square'));
-        $this->info("Import of {$this->argument('square')} square completed");
-    }
-
-    protected function importSquareSql($gridSquare): bool
-    {
-        $squareSize = '25x25';
-        $srid = 4326;
-        $awsFilePath = "eu_original/{$squareSize}/SQL/{$gridSquare}_{$squareSize}_{$srid}.sql";
-        $fileContent = Storage::disk('wmmapdata')->get($awsFilePath);
-        if (is_null($fileContent)) {
-            throw new \Exception("File not found: {$awsFilePath}");
-        }
-
-        $localFilename = basename($awsFilePath);
-        $success = Storage::put($localFilename, $fileContent);
-        $localPath = Storage::path($localFilename);
-
-        $returnState = Artisan::call('dem:import', ['file' => $localPath]);
-        Storage::delete($localPath);
-        return true;
+        $count = $service->dispatchGridImportBatch("Grid_" . $this->argument('square'));
+        $this->info("Dispatched {$count} jobs for the import of {$this->argument('square')} square");
     }
 }
