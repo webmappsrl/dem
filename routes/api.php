@@ -21,5 +21,6 @@ Route::name('api.')->group(function () {
         Route::get('/elevation/{lng}/{lat}', [CalculatePointElevationController::class, 'getElevation'])->name('get-point-elevation');
         Route::post('/track', [CalculateTrackTechDataController::class, 'getTechData'])->name('get-track-tech-data');
         Route::post('/track3d', [CalculateTrackTechDataController::class, 'get3DData'])->name('get-track-3D-data');
+        Route::post('/track/matrix', [CalculateTrackTechDataController::class, 'getMatrix'])->name('get-track-matrix');
     });
 });

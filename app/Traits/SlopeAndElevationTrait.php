@@ -230,4 +230,168 @@ trait SlopeAndElevationTrait
         }
         return $geojson_coordinates;
     }
+
+    /**
+     * Calculate travel time matrix between points on a track (optimized for CAI signage)
+     *
+     * @param object $track The track object containing track data.
+     * @param array $userPoints Array of user points with id, lat, lng, name
+     * @return array Matrix with points and travel times between all pairs
+     */
+    public function calcTrackMatrix($track, $userPoints)
+    {
+        // Get tech params
+        $simplify_preserve_topology_param = config('services.tech_params.simplify_preserve_topology');
+        $sampling_step_param = config('services.tech_params.sampling_step');
+        $smoothed_elevation_param = config('services.tech_params.smoothed_elevation');
+
+        // FASE 1: Pre-calcolo track completa
+        $SimplifyPreserveTopology = DB::select("SELECT ST_SimplifyPreserveTopology(ST_Transform('$track->geometry'::geometry, 3035), $simplify_preserve_topology_param) AS geom")[0]->geom;
+
+        $geomType = DB::select("SELECT ST_GeometryType('$SimplifyPreserveTopology') AS geom_type")[0]->geom_type;
+        if ($geomType != 'ST_LineString') {
+            return ['error' => 'Invalid geometry type'];
+        }
+
+        $resampled_line = DB::select("SELECT ST_LineFromMultiPoint(ST_LineInterpolatePoints('$SimplifyPreserveTopology', $sampling_step_param/ST_Length('$SimplifyPreserveTopology'))) AS geom")[0]->geom;
+        $resampled_line_points = DB::select("SELECT (dp).path[1] AS index, (dp).geom AS geom FROM (SELECT (ST_DumpPoints('$resampled_line')) as dp) as Foo");
+
+        // Calcola elevazioni per tutti i punti
+        foreach ($resampled_line_points as $point) {
+            $point_geom = DB::select("SELECT ST_Transform('$point->geom'::geometry,4326) AS geom")[0]->geom;
+            $coordinates = DB::select("SELECT ST_X('$point_geom') as x,ST_Y('$point_geom') AS y")[0];
+            $point->ele = $this->calcPointElevation($coordinates->x, $coordinates->y);
+        }
+
+        $smoothed_line_points = $this->calcSmoothedElevation($resampled_line_points, $smoothed_elevation_param);
+
+        // FASE 2: Calcola posizioni e ordina punti lungo la track
+        $track_geom_3035 = DB::select("SELECT ST_Transform('$track->geometry'::geometry, 3035) AS geom")[0]->geom;
+        $pointsWithPosition = [];
+
+        foreach ($userPoints as $point) {
+            $point_geom = DB::select("SELECT ST_Transform(ST_SetSRID(ST_MakePoint({$point['lng']}, {$point['lat']}), 4326), 3035) AS geom")[0]->geom;
+            $closest_point = DB::select("SELECT ST_ClosestPoint('$track_geom_3035'::geometry, '$point_geom'::geometry) AS geom")[0]->geom;
+            $fraction = DB::select("SELECT ST_LineLocatePoint('$track_geom_3035'::geometry, '$closest_point'::geometry) AS fraction")[0]->fraction;
+
+            // Calcola elevazione
+            $elevation = $this->calcPointElevation($point['lng'], $point['lat']);
+
+            $pointsWithPosition[] = [
+                'id' => $point['id'],
+                'name' => $point['name'] ?? $point['id'],
+                'lat' => $point['lat'],
+                'lng' => $point['lng'],
+                'elevation' => $elevation,
+                'position_on_track' => floatval($fraction),
+            ];
+        }
+
+        // Ordina per posizione sulla track
+        usort($pointsWithPosition, function ($a, $b) {
+            return $a['position_on_track'] <=> $b['position_on_track'];
+        });
+
+        // Aggiungi is_start e is_end
+        for ($i = 0; $i < count($pointsWithPosition); $i++) {
+            $pointsWithPosition[$i]['is_start'] = ($i === 0);
+            $pointsWithPosition[$i]['is_end'] = ($i === count($pointsWithPosition) - 1);
+        }
+
+        // FASE 3: Calcola solo segmenti consecutivi
+        $segments = [];
+        for ($i = 0; $i < count($pointsWithPosition) - 1; $i++) {
+            $from = $pointsWithPosition[$i];
+            $to = $pointsWithPosition[$i + 1];
+
+            $fraction_from = $from['position_on_track'];
+            $fraction_to = $to['position_on_track'];
+
+            // Estrai segmento
+            $segment_geom = DB::select("SELECT ST_LineSubstring('$track_geom_3035'::geometry, $fraction_from, $fraction_to) AS geom")[0]->geom;
+            $distance = floatval(DB::select("SELECT ST_Length('$segment_geom'::geometry) AS distance")[0]->distance);
+
+            // Trova punti resampled nel segmento
+            $start_idx = intval($fraction_from * (count($smoothed_line_points) - 1));
+            $end_idx = intval($fraction_to * (count($smoothed_line_points) - 1));
+            $segment_points = array_slice($smoothed_line_points, $start_idx, $end_idx - $start_idx + 1);
+
+            // Calcola ascent/descent
+            $ascent = 0;
+            $descent = 0;
+            if (count($segment_points) >= 2) {
+                $this->calcAscentDescent($segment_points, $ascent, $descent);
+            }
+
+            $segments[] = [
+                'from' => $from['id'],
+                'to' => $to['id'],
+                'distance' => round($distance),
+                'ascent' => intval($ascent),
+                'descent' => intval($descent),
+                'elevation_from' => $from['elevation'],
+                'elevation_to' => $to['elevation'],
+                'time_hiking' => ceil($this->calcDuration($distance / 1000, $ascent, 'hiking') / 15) * 15,
+                'time_bike' => ceil($this->calcDuration($distance / 1000, $ascent, 'bike') / 15) * 15,
+            ];
+        }
+
+        // FASE 4: Costruisci matrice completa per composizione
+        $matrix = [];
+        foreach ($pointsWithPosition as $i => $point_i) {
+            $matrix[$point_i['id']] = [];
+
+            foreach ($pointsWithPosition as $j => $point_j) {
+                if ($i === $j) {
+                    $matrix[$point_i['id']][$point_j['id']] = null;
+                    continue;
+                }
+
+                $forward = $i < $j;
+                $start_idx = $forward ? $i : $j;
+                $end_idx = $forward ? $j : $i;
+
+                // Somma segmenti consecutivi
+                $total_distance = 0;
+                $total_ascent = 0;
+                $total_descent = 0;
+                $elevation_from = $pointsWithPosition[$start_idx]['elevation'];
+                $elevation_to = $pointsWithPosition[$end_idx]['elevation'];
+
+                for ($k = $start_idx; $k < $end_idx; $k++) {
+                    $total_distance += $segments[$k]['distance'];
+                    if ($forward) {
+                        $total_ascent += $segments[$k]['ascent'];
+                        $total_descent += $segments[$k]['descent'];
+                    } else {
+                        // Inverti per direzione opposta
+                        $total_ascent += $segments[$k]['descent'];
+                        $total_descent += $segments[$k]['ascent'];
+                    }
+                }
+
+                if (!$forward) {
+                    // Inverti elevazioni
+                    $temp = $elevation_from;
+                    $elevation_from = $elevation_to;
+                    $elevation_to = $temp;
+                }
+
+                $matrix[$point_i['id']][$point_j['id']] = [
+                    'distance' => $total_distance,
+                    'time_hiking' => ceil($this->calcDuration($total_distance / 1000, $total_ascent, 'hiking') / 15) * 15,
+                    'time_bike' => ceil($this->calcDuration($total_distance / 1000, $total_ascent, 'bike') / 15) * 15,
+                    'ascent' => intval($total_ascent),
+                    'descent' => intval($total_descent),
+                    'elevation_from' => $elevation_from,
+                    'elevation_to' => $elevation_to,
+                ];
+            }
+        }
+
+        return [
+            'points' => $pointsWithPosition,
+            'matrix' => $matrix,
+        ];
+    }
 }
