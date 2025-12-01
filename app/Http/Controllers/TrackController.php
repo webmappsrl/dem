@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreTrackRequest;
+use App\Http\Requests\StoretrackRequest;
 use App\Http\Requests\UpdateTrackRequest;
 use App\Models\Track;
 
@@ -27,7 +27,7 @@ class TrackController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreTrackRequest $request)
+    public function store(StoretrackRequest $request)
     {
         //
     }
