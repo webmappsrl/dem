@@ -28,88 +28,152 @@ class ApiTrackMatrix125Test extends TestCase
         $trackJson = File::get(base_path('tests/Feature/Stubs/track_125_Agnano_FoceCalci.geojson'));
         $track = json_decode($trackJson, true);
 
-        // Select waypoints along the track (start, 25%, 50%, 75%, end)
-        // Total: 183 points in the track
+        // Convert to FeatureCollection format
         $payload = [
-            'track' => $track,
-            'points' => [
+            'type' => 'FeatureCollection',
+            'features' => [
                 [
-                    'id' => 'P0',
-                    'name' => 'Agnano (Partenza)',
-                    'lat' => 43.7365189,
-                    'lng' => 10.4843031
+                    'type' => 'Feature',
+                    'geometry' => [
+                        'type' => 'Point',
+                        'coordinates' => [10.4843031, 43.7365189]
+                    ],
+                    'properties' => [
+                        'id' => 'P0',
+                        'name' => 'Agnano (Partenza)'
+                    ]
                 ],
                 [
-                    'id' => 'P1',
-                    'name' => 'Bivio 1',
-                    'lat' => 43.7403408,
-                    'lng' => 10.4887234
+                    'type' => 'Feature',
+                    'geometry' => [
+                        'type' => 'Point',
+                        'coordinates' => [10.4887234, 43.7403408]
+                    ],
+                    'properties' => [
+                        'id' => 'P1',
+                        'name' => 'Bivio 1'
+                    ]
                 ],
                 [
-                    'id' => 'P2',
-                    'name' => 'Punto Intermedio',
-                    'lat' => 43.7452919,
-                    'lng' => 10.4910274
+                    'type' => 'Feature',
+                    'geometry' => [
+                        'type' => 'Point',
+                        'coordinates' => [10.4910274, 43.7452919]
+                    ],
+                    'properties' => [
+                        'id' => 'P2',
+                        'name' => 'Punto Intermedio'
+                    ]
                 ],
                 [
-                    'id' => 'P3',
-                    'name' => 'Bivio 2',
-                    'lat' => 43.744651,
-                    'lng' => 10.4945071
+                    'type' => 'Feature',
+                    'geometry' => [
+                        'type' => 'Point',
+                        'coordinates' => [10.4945071, 43.744651]
+                    ],
+                    'properties' => [
+                        'id' => 'P3',
+                        'name' => 'Bivio 2'
+                    ]
                 ],
                 [
-                    'id' => 'P4',
-                    'name' => 'Foce di Calci (Arrivo)',
-                    'lat' => 43.745965,
-                    'lng' => 10.503729
+                    'type' => 'Feature',
+                    'geometry' => [
+                        'type' => 'Point',
+                        'coordinates' => [10.503729, 43.745965]
+                    ],
+                    'properties' => [
+                        'id' => 'P4',
+                        'name' => 'Foce di Calci (Arrivo)'
+                    ]
                 ],
+                [
+                    'type' => 'Feature',
+                    'geometry' => $track['geometry'],
+                    'properties' => [
+                        'id' => 'track_125'
+                    ]
+                ]
             ]
         ];
 
-        $response = $this->postJson('/api/v1/track/matrix', $payload);
+        $response = $this->postJson('/api/v1/feature-collection/point-matrix', $payload);
 
         $response->assertStatus(200);
-        $response->assertJsonStructure(['points', 'matrix']);
-
         $data = $response->json();
 
+        $this->assertEquals('FeatureCollection', $data['type']);
+        $this->assertArrayHasKey('features', $data);
+
+        // Estrai solo i Point features
+        $pointFeatures = array_filter($data['features'], function ($feature) {
+            return $feature['geometry']['type'] === 'Point';
+        });
+        $pointFeatures = array_values($pointFeatures);
+
         // Verify we have 5 points
-        $this->assertCount(5, $data['points']);
+        $this->assertCount(5, $pointFeatures);
+
+        // Extract dem data
+        $points = array_map(function ($feature) {
+            return $feature['properties']['dem'];
+        }, $pointFeatures);
 
         // Verify points are ordered
-        $this->assertEquals('P0', $data['points'][0]['id']);
-        $this->assertEquals('P4', $data['points'][4]['id']);
+        $this->assertEquals('P0', $points[0]['id']);
+        $this->assertEquals('P4', $points[4]['id']);
 
-        // Verify start and end flags
-        $this->assertTrue($data['points'][0]['is_start']);
-        $this->assertFalse($data['points'][0]['is_end']);
-        $this->assertFalse($data['points'][4]['is_start']);
-        $this->assertTrue($data['points'][4]['is_end']);
+        // Estrai le LineString features per verificare points_order
+        $lineFeatures = array_filter($data['features'], function ($feature) {
+            return in_array($feature['geometry']['type'], ['LineString', 'MultiLineString']);
+        });
+        $lineFeatures = array_values($lineFeatures);
 
-        // Verify matrix is complete (5x5)
-        $this->assertCount(5, $data['matrix']);
-        foreach ($data['points'] as $point) {
-            $this->assertArrayHasKey($point['id'], $data['matrix']);
-            $this->assertCount(5, $data['matrix'][$point['id']]);
-        }
+        $this->assertGreaterThan(0, count($lineFeatures), "Should have at least one LineString feature");
+
+        // Verifica che la LineString feature abbia points_order
+        $trackFeature = $lineFeatures[0];
+        $this->assertArrayHasKey('dem', $trackFeature['properties']);
+        $this->assertArrayHasKey('points_order', $trackFeature['properties']['dem']);
+
+        $pointsOrder = $trackFeature['properties']['dem']['points_order'];
+        $this->assertIsArray($pointsOrder);
+        $this->assertCount(5, $pointsOrder, "Should have 5 points in order");
+
+        // Verifica che il primo punto in points_order sia il punto di partenza
+        $firstPointId = $pointsOrder[0];
+        $this->assertEquals('P0', $firstPointId, "First point should be P0");
+
+        // Verifica che l'ultimo punto in points_order sia il punto di arrivo
+        $lastPointId = $pointsOrder[count($pointsOrder) - 1];
+        $this->assertEquals('P4', $lastPointId, "Last point should be P4");
+
+        // Verify matrix_row structure
+        $firstPoint = $points[0];
+        $this->assertArrayHasKey('matrix_row', $firstPoint);
+        $this->assertArrayHasKey('track_125', $firstPoint['matrix_row']);
+
+        $matrix = $firstPoint['matrix_row']['track_125'];
+        $this->assertCount(4, $matrix); // 4 other points (P1, P2, P3, P4)
 
         // Test full route P0 -> P4 (Agnano to Foce di Calci)
-        $fullRoute = $data['matrix']['P0']['P4'];
+        $fullRoute = $matrix['P4'];
         $this->assertNotNull($fullRoute);
-        
+
         // Distance should be approximately 4km = 4000m (with some tolerance)
         $this->assertGreaterThan(3500, $fullRoute['distance']);
         $this->assertLessThan(5000, $fullRoute['distance']);
 
         // Elevation gain should be significant (going uphill)
         $this->assertGreaterThan(400, $fullRoute['ascent']);
-        
+
         // Time should be reasonable for a 4km uphill hike
         $this->assertGreaterThan(60, $fullRoute['time_hiking']); // at least 60 minutes
         $this->assertLessThan(180, $fullRoute['time_hiking']); // less than 3 hours
 
         // Verify reverse route has less time (downhill)
-        $reverseRoute = $data['matrix']['P4']['P0'];
+        $p4Matrix = $points[4]['matrix_row']['track_125'];
+        $reverseRoute = $p4Matrix['P0'];
         $this->assertLessThan($fullRoute['time_hiking'], $reverseRoute['time_hiking']);
 
         // Verify distance is the same in both directions
@@ -133,26 +197,97 @@ class ApiTrackMatrix125Test extends TestCase
         $track = json_decode($trackJson, true);
 
         $payload = [
-            'track' => $track,
-            'points' => [
-                ['id' => 'P0', 'name' => 'Agnano', 'lat' => 43.7365189, 'lng' => 10.4843031],
-                ['id' => 'P1', 'name' => 'Bivio 1', 'lat' => 43.7403408, 'lng' => 10.4887234],
-                ['id' => 'P2', 'name' => 'Intermedio', 'lat' => 43.7452919, 'lng' => 10.4910274],
-                ['id' => 'P3', 'name' => 'Bivio 2', 'lat' => 43.744651, 'lng' => 10.4945071],
-                ['id' => 'P4', 'name' => 'Foce di Calci', 'lat' => 43.745965, 'lng' => 10.503729],
+            'type' => 'FeatureCollection',
+            'features' => [
+                [
+                    'type' => 'Feature',
+                    'geometry' => [
+                        'type' => 'Point',
+                        'coordinates' => [10.4843031, 43.7365189]
+                    ],
+                    'properties' => [
+                        'id' => 'P0',
+                        'name' => 'Agnano'
+                    ]
+                ],
+                [
+                    'type' => 'Feature',
+                    'geometry' => [
+                        'type' => 'Point',
+                        'coordinates' => [10.4887234, 43.7403408]
+                    ],
+                    'properties' => [
+                        'id' => 'P1',
+                        'name' => 'Bivio 1'
+                    ]
+                ],
+                [
+                    'type' => 'Feature',
+                    'geometry' => [
+                        'type' => 'Point',
+                        'coordinates' => [10.4910274, 43.7452919]
+                    ],
+                    'properties' => [
+                        'id' => 'P2',
+                        'name' => 'Intermedio'
+                    ]
+                ],
+                [
+                    'type' => 'Feature',
+                    'geometry' => [
+                        'type' => 'Point',
+                        'coordinates' => [10.4945071, 43.744651]
+                    ],
+                    'properties' => [
+                        'id' => 'P3',
+                        'name' => 'Bivio 2'
+                    ]
+                ],
+                [
+                    'type' => 'Feature',
+                    'geometry' => [
+                        'type' => 'Point',
+                        'coordinates' => [10.503729, 43.745965]
+                    ],
+                    'properties' => [
+                        'id' => 'P4',
+                        'name' => 'Foce di Calci'
+                    ]
+                ],
+                [
+                    'type' => 'Feature',
+                    'geometry' => $track['geometry'],
+                    'properties' => [
+                        'id' => 'track_125'
+                    ]
+                ]
             ]
         ];
 
-        $response = $this->postJson('/api/v1/track/matrix', $payload);
+        $response = $this->postJson('/api/v1/feature-collection/point-matrix', $payload);
         $data = $response->json();
-        $matrix = $data['matrix'];
+
+        // Estrai solo i Point features
+        $pointFeatures = array_filter($data['features'], function ($feature) {
+            return $feature['geometry']['type'] === 'Point';
+        });
+        $pointFeatures = array_values($pointFeatures);
+
+        $points = array_map(function ($feature) {
+            return $feature['properties']['dem'];
+        }, $pointFeatures);
+
+        $p0Matrix = $points[0]['matrix_row']['track_125'];
+        $p1Matrix = $points[1]['matrix_row']['track_125'];
+        $p2Matrix = $points[2]['matrix_row']['track_125'];
+        $p3Matrix = $points[3]['matrix_row']['track_125'];
 
         // Test additivity: P0->P4 should equal sum of segments
-        $total_distance = $matrix['P0']['P4']['distance'];
-        $segment_sum = $matrix['P0']['P1']['distance'] +
-                       $matrix['P1']['P2']['distance'] +
-                       $matrix['P2']['P3']['distance'] +
-                       $matrix['P3']['P4']['distance'];
+        $total_distance = $p0Matrix['P4']['distance'];
+        $segment_sum = $p0Matrix['P1']['distance'] +
+            $p1Matrix['P2']['distance'] +
+            $p2Matrix['P3']['distance'] +
+            $p3Matrix['P4']['distance'];
 
         $this->assertEqualsWithDelta(
             $total_distance,
@@ -162,11 +297,11 @@ class ApiTrackMatrix125Test extends TestCase
         );
 
         // Test additivity for ascent
-        $total_ascent = $matrix['P0']['P4']['ascent'];
-        $ascent_sum = $matrix['P0']['P1']['ascent'] +
-                      $matrix['P1']['P2']['ascent'] +
-                      $matrix['P2']['P3']['ascent'] +
-                      $matrix['P3']['P4']['ascent'];
+        $total_ascent = $p0Matrix['P4']['ascent'];
+        $ascent_sum = $p0Matrix['P1']['ascent'] +
+            $p1Matrix['P2']['ascent'] +
+            $p2Matrix['P3']['ascent'] +
+            $p3Matrix['P4']['ascent'];
 
         $this->assertEqualsWithDelta(
             $total_ascent,
@@ -187,31 +322,105 @@ class ApiTrackMatrix125Test extends TestCase
         $track = json_decode($trackJson, true);
 
         $payload = [
-            'track' => $track,
-            'points' => [
-                ['id' => 'P0', 'name' => 'Agnano', 'lat' => 43.7365189, 'lng' => 10.4843031],
-                ['id' => 'P1', 'name' => 'Bivio 1', 'lat' => 43.7403408, 'lng' => 10.4887234],
-                ['id' => 'P2', 'name' => 'Intermedio', 'lat' => 43.7452919, 'lng' => 10.4910274],
-                ['id' => 'P3', 'name' => 'Bivio 2', 'lat' => 43.744651, 'lng' => 10.4945071],
-                ['id' => 'P4', 'name' => 'Foce di Calci', 'lat' => 43.745965, 'lng' => 10.503729],
+            'type' => 'FeatureCollection',
+            'features' => [
+                [
+                    'type' => 'Feature',
+                    'geometry' => [
+                        'type' => 'Point',
+                        'coordinates' => [10.4843031, 43.7365189]
+                    ],
+                    'properties' => [
+                        'id' => 'P0',
+                        'name' => 'Agnano'
+                    ]
+                ],
+                [
+                    'type' => 'Feature',
+                    'geometry' => [
+                        'type' => 'Point',
+                        'coordinates' => [10.4887234, 43.7403408]
+                    ],
+                    'properties' => [
+                        'id' => 'P1',
+                        'name' => 'Bivio 1'
+                    ]
+                ],
+                [
+                    'type' => 'Feature',
+                    'geometry' => [
+                        'type' => 'Point',
+                        'coordinates' => [10.4910274, 43.7452919]
+                    ],
+                    'properties' => [
+                        'id' => 'P2',
+                        'name' => 'Intermedio'
+                    ]
+                ],
+                [
+                    'type' => 'Feature',
+                    'geometry' => [
+                        'type' => 'Point',
+                        'coordinates' => [10.4945071, 43.744651]
+                    ],
+                    'properties' => [
+                        'id' => 'P3',
+                        'name' => 'Bivio 2'
+                    ]
+                ],
+                [
+                    'type' => 'Feature',
+                    'geometry' => [
+                        'type' => 'Point',
+                        'coordinates' => [10.503729, 43.745965]
+                    ],
+                    'properties' => [
+                        'id' => 'P4',
+                        'name' => 'Foce di Calci'
+                    ]
+                ],
+                [
+                    'type' => 'Feature',
+                    'geometry' => $track['geometry'],
+                    'properties' => [
+                        'id' => 'track_125'
+                    ]
+                ]
             ]
         ];
 
-        $response = $this->postJson('/api/v1/track/matrix', $payload);
+        $response = $this->postJson('/api/v1/feature-collection/point-matrix', $payload);
         $data = $response->json();
 
+        // Estrai solo i Point features
+        $pointFeatures = array_filter($data['features'], function ($feature) {
+            return $feature['geometry']['type'] === 'Point';
+        });
+        $pointFeatures = array_values($pointFeatures);
+
         // Simulate generating CAI sign data for waypoint P2 (Punto Intermedio)
-        $waypoint = $data['points'][2];
+        $waypointFeature = $pointFeatures[2];
+        $waypoint = $waypointFeature['properties']['dem'];
         $this->assertEquals('P2', $waypoint['id']);
-        $this->assertFalse($waypoint['is_start']);
-        $this->assertFalse($waypoint['is_end']);
+
+        // Verifica che P2 non sia né il primo né l'ultimo punto in points_order
+        $lineFeatures = array_filter($data['features'], function ($feature) {
+            return in_array($feature['geometry']['type'], ['LineString', 'MultiLineString']);
+        });
+        $lineFeatures = array_values($lineFeatures);
+        $trackFeature = $lineFeatures[0];
+        $pointsOrder = $trackFeature['properties']['dem']['points_order'];
+
+        $this->assertNotEquals('P2', $pointsOrder[0], "P2 should not be the start point");
+        $this->assertNotEquals('P2', $pointsOrder[count($pointsOrder) - 1], "P2 should not be the end point");
+        $this->assertContains('P2', $pointsOrder, "P2 should be in the points_order array");
 
         // From P2, we can go forward or backward
-        $matrix = $data['matrix'];
+        $matrix = $waypoint['matrix_row']['track_125'];
 
         // Forward direction options (meta ravvicinata, intermedia, itinerario)
-        $forward_close = $matrix['P2']['P3']; // Meta ravvicinata
-        $forward_far = $matrix['P2']['P4'];   // Meta d'itinerario
+        $forward_close = $matrix['P3']; // Meta ravvicinata
+        $forward_far = $matrix['P4'];   // Meta d'itinerario
 
         $this->assertNotNull($forward_close);
         $this->assertNotNull($forward_far);
@@ -220,8 +429,8 @@ class ApiTrackMatrix125Test extends TestCase
         $this->assertArrayHasKey('elevation_to', $forward_close);
 
         // Backward direction options
-        $backward_close = $matrix['P2']['P1']; // Meta ravvicinata
-        $backward_far = $matrix['P2']['P0'];   // Meta d'itinerario
+        $backward_close = $matrix['P1']; // Meta ravvicinata
+        $backward_far = $matrix['P0'];   // Meta d'itinerario
 
         $this->assertNotNull($backward_close);
         $this->assertNotNull($backward_far);
@@ -229,7 +438,7 @@ class ApiTrackMatrix125Test extends TestCase
         // Verify all data needed for CAI sign is present
         $this->assertArrayHasKey('elevation', $waypoint);
         $this->assertArrayHasKey('name', $waypoint);
-        
+
         // For each direction, we have distance, time, and elevation difference
         foreach ([$forward_close, $forward_far, $backward_close, $backward_far] as $segment) {
             $this->assertArrayHasKey('distance', $segment);
@@ -239,4 +448,3 @@ class ApiTrackMatrix125Test extends TestCase
         }
     }
 }
-

@@ -3,6 +3,7 @@
 namespace App\Traits;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use stdClass;
 
 trait SlopeAndElevationTrait
@@ -16,28 +17,78 @@ trait SlopeAndElevationTrait
      */
     public function calcPointElevation($lng, $lat)
     {
-        $result = DB::table('o_4_dem')
-            ->select(DB::raw("
+        // Prova con ST_Value usando resample (più robusto)
+        $result = DB::select("
+            SELECT 
                 ST_Value(
                     rast,
-                    ST_Transform(
-                        ST_SetSRID(ST_MakePoint($lng, $lat), 4326),
-                        4326
-                    )
+                    1,
+                    ST_SetSRID(ST_MakePoint($lng, $lat), 4326),
+                    true
                 ) AS ele
-            "))
-            ->whereRaw("
-                ST_Intersects(
-                    rast,
-                    ST_Transform(
-                        ST_SetSRID(ST_MakePoint($lng, $lat), 4326),
-                        4326
-                    )
-                )
-            ")
-            ->first();
+            FROM o_4_dem
+            WHERE ST_Intersects(
+                rast,
+                ST_SetSRID(ST_MakePoint($lng, $lat), 4326)
+            )
+            LIMIT 1
+        ");
 
-        return ($result && $result->ele) ? intval($result->ele) : null;
+        if (!empty($result) && isset($result[0]->ele) && $result[0]->ele !== null) {
+            $elevation = intval($result[0]->ele);
+            // 0 è un valore valido per l'elevazione (livello del mare)
+            return $elevation;
+        }
+
+        // Se non trova nulla, prova senza resample
+        $result = DB::select("
+            SELECT 
+                ST_Value(
+                    rast,
+                    1,
+                    ST_SetSRID(ST_MakePoint($lng, $lat), 4326)
+                ) AS ele
+            FROM o_4_dem
+            WHERE ST_Intersects(
+                rast,
+                ST_SetSRID(ST_MakePoint($lng, $lat), 4326)
+            )
+            LIMIT 1
+        ");
+
+        if (!empty($result) && isset($result[0]->ele) && $result[0]->ele !== null) {
+            $elevation = intval($result[0]->ele);
+            return $elevation;
+        }
+
+        // Se ancora non trova nulla, prova senza specificare la banda
+        $result = DB::select("
+            SELECT 
+                ST_Value(
+                    rast,
+                    ST_SetSRID(ST_MakePoint($lng, $lat), 4326)
+                ) AS ele
+            FROM o_4_dem
+            WHERE ST_Intersects(
+                rast,
+                ST_SetSRID(ST_MakePoint($lng, $lat), 4326)
+            )
+            LIMIT 1
+        ");
+
+        if (!empty($result) && isset($result[0]->ele) && $result[0]->ele !== null) {
+            $elevation = intval($result[0]->ele);
+            return $elevation;
+        }
+
+        // Log per debug se elevation è null
+        Log::warning("Elevation is null for point", [
+            'lng' => $lng,
+            'lat' => $lat,
+            'result_count' => count($result ?? [])
+        ]);
+
+        return null;
     }
 
     /**
@@ -248,10 +299,30 @@ trait SlopeAndElevationTrait
         // FASE 1: Pre-calcolo track completa
         $SimplifyPreserveTopology = DB::select("SELECT ST_SimplifyPreserveTopology(ST_Transform('$track->geometry'::geometry, 3035), $simplify_preserve_topology_param) AS geom")[0]->geom;
 
-        $geomType = DB::select("SELECT ST_GeometryType('$SimplifyPreserveTopology') AS geom_type")[0]->geom_type;
-        if ($geomType != 'ST_LineString') {
-            return ['error' => 'Invalid geometry type'];
+        // Prova a unire le linee dopo la semplificazione (potrebbero essere state separate)
+        $mergedGeometry = DB::select("SELECT ST_LineMerge('$SimplifyPreserveTopology'::geometry) AS geom")[0]->geom;
+
+        $geomType = DB::select("SELECT ST_GeometryType('$mergedGeometry') AS geom_type")[0]->geom_type;
+
+        // Se rimane un MultiLineString, convertilo in LineString unendo tutte le linee
+        if ($geomType == 'ST_MultiLineString') {
+            // Estrai tutte le LineString e uniscile in una singola LineString
+            $mergedGeometry = DB::select("
+                SELECT ST_MakeLine(geom) as geom
+                FROM (
+                    SELECT (ST_Dump('$mergedGeometry'::geometry)).geom as geom
+                    ORDER BY (ST_Dump('$mergedGeometry'::geometry)).path
+                ) AS lines
+            ")[0]->geom;
+            $geomType = 'ST_LineString';
         }
+
+        if ($geomType != 'ST_LineString') {
+            return ['error' => 'Invalid geometry type: track must be a single connected LineString'];
+        }
+
+        // Usa la geometria unita per i calcoli successivi
+        $SimplifyPreserveTopology = $mergedGeometry;
 
         $resampled_line = DB::select("SELECT ST_LineFromMultiPoint(ST_LineInterpolatePoints('$SimplifyPreserveTopology', $sampling_step_param/ST_Length('$SimplifyPreserveTopology'))) AS geom")[0]->geom;
         $resampled_line_points = DB::select("SELECT (dp).path[1] AS index, (dp).geom AS geom FROM (SELECT (ST_DumpPoints('$resampled_line')) as dp) as Foo");
