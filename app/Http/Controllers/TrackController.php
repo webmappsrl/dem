@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoretrackRequest;
-use App\Http\Requests\UpdateTrackRequest;
+use App\Http\Requests\UpdatetrackRequest;
 use App\Models\Track;
 
 class TrackController extends Controller
@@ -51,7 +51,7 @@ class TrackController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateTrackRequest $request, Track $track)
+    public function update(UpdatetrackRequest $request, Track $track)
     {
         //
     }
