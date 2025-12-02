@@ -17,78 +17,28 @@ trait SlopeAndElevationTrait
      */
     public function calcPointElevation($lng, $lat)
     {
-        // Prova con ST_Value usando resample (più robusto)
-        $result = DB::select("
-            SELECT 
+        $result = DB::table('dem')
+            ->select(DB::raw("
                 ST_Value(
                     rast,
-                    1,
-                    ST_SetSRID(ST_MakePoint($lng, $lat), 4326),
-                    true
+                    ST_Transform(
+                        ST_SetSRID(ST_MakePoint($lng, $lat), 4326),
+                        3035
+                    )
                 ) AS ele
-            FROM o_4_dem
-            WHERE ST_Intersects(
-                rast,
-                ST_SetSRID(ST_MakePoint($lng, $lat), 4326)
-            )
-            LIMIT 1
-        ");
-
-        if (!empty($result) && isset($result[0]->ele) && $result[0]->ele !== null) {
-            $elevation = intval($result[0]->ele);
-            // 0 è un valore valido per l'elevazione (livello del mare)
-            return $elevation;
-        }
-
-        // Se non trova nulla, prova senza resample
-        $result = DB::select("
-            SELECT 
-                ST_Value(
+            "))
+            ->whereRaw("
+                ST_Intersects(
                     rast,
-                    1,
-                    ST_SetSRID(ST_MakePoint($lng, $lat), 4326)
-                ) AS ele
-            FROM o_4_dem
-            WHERE ST_Intersects(
-                rast,
-                ST_SetSRID(ST_MakePoint($lng, $lat), 4326)
-            )
-            LIMIT 1
-        ");
+                    ST_Transform(
+                        ST_SetSRID(ST_MakePoint($lng, $lat), 4326),
+                        3035
+                    )
+                )
+            ")
+            ->first();
 
-        if (!empty($result) && isset($result[0]->ele) && $result[0]->ele !== null) {
-            $elevation = intval($result[0]->ele);
-            return $elevation;
-        }
-
-        // Se ancora non trova nulla, prova senza specificare la banda
-        $result = DB::select("
-            SELECT 
-                ST_Value(
-                    rast,
-                    ST_SetSRID(ST_MakePoint($lng, $lat), 4326)
-                ) AS ele
-            FROM o_4_dem
-            WHERE ST_Intersects(
-                rast,
-                ST_SetSRID(ST_MakePoint($lng, $lat), 4326)
-            )
-            LIMIT 1
-        ");
-
-        if (!empty($result) && isset($result[0]->ele) && $result[0]->ele !== null) {
-            $elevation = intval($result[0]->ele);
-            return $elevation;
-        }
-
-        // Log per debug se elevation è null
-        Log::warning("Elevation is null for point", [
-            'lng' => $lng,
-            'lat' => $lat,
-            'result_count' => count($result ?? [])
-        ]);
-
-        return null;
+        return ($result && $result->ele) ? intval($result->ele) : null;
     }
 
     /**
