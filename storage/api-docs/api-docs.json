@@ -257,240 +257,114 @@
                 }
             }
         },
-        "/api/v1/track/matrix": {
+        "/api/v1/feature-collection/point-matrix": {
             "post": {
                 "tags": [
-                    "Track Matrix"
+                    "Point Matrix"
                 ],
-                "summary": "Calculate travel time matrix for CAI signage",
-                "description": "Calculate distance and travel times between all pairs of points on a track. Optimized for generating CAI hiking signage data.",
-                "operationId": "05b754c903d20ba27dc65e617a997e87",
+                "summary": "Calculate distance and time matrix for Point features in a FeatureCollection",
+                "description": "<p>Processes a GeoJSON FeatureCollection and calculates a distance/time matrix for each Point feature.</p><p><strong>Input:</strong> The API accepts a FeatureCollection containing Point features and LineString/MultiLineString features. MultiLineString features are automatically converted to LineString for processing.</p><p><strong>Processing:</strong> For each Point feature, it calculates distances, travel times, elevation changes, and other metrics to all other Point features along each LineString/MultiLineString feature.</p><p><strong>3D Coordinates:</strong> <em>All geometries in the response are enriched with 3D coordinates (Z elevation) calculated from the DEM.</em> Point features have coordinates <code>[lng, lat, elevation]</code>. LineString/MultiLineString features have all their coordinate points enriched with elevation <code>[lng, lat, elevation]</code>.</p><p><strong>Output:</strong> The response is a FeatureCollection where:</p><p><strong>For Point features:</strong> The API adds a <code>properties.dem</code> object containing:<ul><li><strong>id</strong> - Point identifier (copied from input)</li><li><strong>name</strong> - Point name (from input properties.name or properties.tooltip)</li><li><strong>elevation</strong> - Elevation in meters above sea level (calculated from DEM)</li><li><strong>matrix_row</strong> - Distance/time matrix organized by track ID, where each track contains matrix data for all target Point IDs with the following attributes:<br/>• <strong>distance</strong> - Distance along the LineString from this Point to the target Point, in meters<br/>• <strong>time_hiking</strong> - Estimated hiking time from this Point to the target Point, in seconds<br/>• <strong>time_bike</strong> - Estimated biking time from this Point to the target Point, in seconds<br/>• <strong>ascent</strong> - Total elevation gain (positive elevation change) from this Point to the target Point, in meters<br/>• <strong>descent</strong> - Total elevation loss (negative elevation change) from this Point to the target Point, in meters<br/>• <strong>elevation_from</strong> - Elevation at the source Point (this Point) in meters above sea level<br/>• <strong>elevation_to</strong> - Elevation at the target Point in meters above sea level</li></ul></p><p><strong>For LineString/MultiLineString features:</strong> The API adds a <code>properties.dem</code> object containing:<ul><li><strong>id</strong> - Track identifier (copied from input)</li><li><strong>points_order</strong> - Array of Point feature IDs ordered by their position along the track, from start to end</li></ul></p>",
+                "operationId": "47eee3d02b9215b09853e5d3137ebab8",
                 "requestBody": {
-                    "description": "Track GeoJSON and array of waypoints",
+                    "description": "GeoJSON FeatureCollection. Must contain at least one Point feature and one LineString or MultiLineString feature.",
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "track",
-                                    "points"
-                                ]
+                                    "type",
+                                    "features"
+                                ],
+                                "properties": {
+                                    "type": {
+                                        "description": "Must be 'FeatureCollection'",
+                                        "type": "string",
+                                        "example": "FeatureCollection"
+                                    },
+                                    "features": {
+                                        "description": "Array of GeoJSON Feature objects. Each feature must have 'type': 'Feature', a 'geometry' object, and a 'properties' object.",
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "type": {
+                                                    "description": "Must be 'Feature'",
+                                                    "type": "string",
+                                                    "example": "Feature"
+                                                },
+                                                "geometry": {
+                                                    "description": "GeoJSON geometry object. For Point features: type 'Point' with coordinates [lng, lat]. For LineString features: type 'LineString' with array of coordinate pairs. For MultiLineString features: type 'MultiLineString' with array of LineString coordinate arrays.",
+                                                    "type": "object"
+                                                },
+                                                "properties": {
+                                                    "description": "Feature properties. Must contain 'id' (required, string or number) for all features. For Point features: 'id' is used as identifier in the matrix_row. For LineString/MultiLineString features: 'id' is used as key in the matrix_row structure to identify which track the matrix data refers to.",
+                                                    "required": [
+                                                        "id"
+                                                    ],
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
                             },
                             "examples": {
-                                "matrix_example": {
-                                    "summary": "Example from test",
+                                "feature_collection_example": {
+                                    "summary": "Example FeatureCollection",
                                     "value": {
-                                        "track": {
-                                            "type": "Feature",
-                                            "properties": {
-                                                "id": 1
-                                            },
-                                            "geometry": {
-                                                "type": "LineString",
-                                                "coordinates": [
-                                                    [
-                                                        10.5158256,
-                                                        43.7889613
-                                                    ],
-                                                    [
-                                                        10.5156075,
-                                                        43.7886481
-                                                    ],
-                                                    [
-                                                        10.5155837,
-                                                        43.7885842
-                                                    ],
-                                                    [
-                                                        10.51563,
-                                                        43.78856
-                                                    ],
-                                                    [
-                                                        10.51576,
-                                                        43.78852
-                                                    ],
-                                                    [
-                                                        10.5156411,
-                                                        43.7881923
-                                                    ],
-                                                    [
-                                                        10.5157253,
-                                                        43.7881353
-                                                    ],
-                                                    [
-                                                        10.515915,
-                                                        43.7880872
-                                                    ],
-                                                    [
-                                                        10.5158963,
-                                                        43.7879696
-                                                    ],
-                                                    [
-                                                        10.5158353,
-                                                        43.7878844
-                                                    ],
-                                                    [
-                                                        10.5157631,
-                                                        43.7877896
-                                                    ],
-                                                    [
-                                                        10.515636,
-                                                        43.787774
-                                                    ],
-                                                    [
-                                                        10.515334,
-                                                        43.78753
-                                                    ],
-                                                    [
-                                                        10.51523,
-                                                        43.7874
-                                                    ],
-                                                    [
-                                                        10.514838,
-                                                        43.786734
-                                                    ],
-                                                    [
-                                                        10.51455,
-                                                        43.786413
-                                                    ],
-                                                    [
-                                                        10.514479,
-                                                        43.786251
-                                                    ],
-                                                    [
-                                                        10.514458,
-                                                        43.786083
-                                                    ],
-                                                    [
-                                                        10.514471,
-                                                        43.785787
-                                                    ],
-                                                    [
-                                                        10.514533,
-                                                        43.785514
-                                                    ],
-                                                    [
-                                                        10.514695,
-                                                        43.785046
-                                                    ],
-                                                    [
-                                                        10.514691,
-                                                        43.7847
-                                                    ],
-                                                    [
-                                                        10.514712,
-                                                        43.784396
-                                                    ],
-                                                    [
-                                                        10.514742,
-                                                        43.784275
-                                                    ],
-                                                    [
-                                                        10.514937,
-                                                        43.783833
-                                                    ],
-                                                    [
-                                                        10.515052,
-                                                        43.783505
-                                                    ],
-                                                    [
-                                                        10.515146,
-                                                        43.783321
-                                                    ],
-                                                    [
-                                                        10.515149,
-                                                        43.783215
-                                                    ],
-                                                    [
-                                                        10.515101,
-                                                        43.782904
-                                                    ],
-                                                    [
-                                                        10.515032,
-                                                        43.782659
-                                                    ],
-                                                    [
-                                                        10.514994,
-                                                        43.782366
-                                                    ],
-                                                    [
-                                                        10.515027,
-                                                        43.78201
-                                                    ],
-                                                    [
-                                                        10.515002,
-                                                        43.781715
-                                                    ],
-                                                    [
-                                                        10.515013,
-                                                        43.780893
-                                                    ],
-                                                    [
-                                                        10.515056,
-                                                        43.780636
-                                                    ],
-                                                    [
-                                                        10.515148,
-                                                        43.780433
-                                                    ],
-                                                    [
-                                                        10.515202,
-                                                        43.780232
-                                                    ],
-                                                    [
-                                                        10.515215,
-                                                        43.779855
-                                                    ],
-                                                    [
-                                                        10.515177,
-                                                        43.779382
-                                                    ],
-                                                    [
-                                                        10.515193,
-                                                        43.779195
-                                                    ],
-                                                    [
-                                                        10.515241,
-                                                        43.779084
-                                                    ],
-                                                    [
-                                                        10.51535,
-                                                        43.778979
-                                                    ],
-                                                    [
-                                                        10.51547,
-                                                        43.778916
-                                                    ],
-                                                    [
-                                                        10.516022,
-                                                        43.778706
+                                        "type": "FeatureCollection",
+                                        "features": [
+                                            {
+                                                "type": "Feature",
+                                                "geometry": {
+                                                    "type": "Point",
+                                                    "coordinates": [
+                                                        8.7907791,
+                                                        46.0213254
                                                     ]
-                                                ]
-                                            }
-                                        },
-                                        "points": [
-                                            {
-                                                "id": "P0",
-                                                "name": "Inizio Sentiero",
-                                                "lat": 43.7889613,
-                                                "lng": 10.5158256
+                                                },
+                                                "properties": {
+                                                    "id": 4558
+                                                }
                                             },
                                             {
-                                                "id": "P1",
-                                                "name": "Bivio Intermedio",
-                                                "lat": 43.7878844,
-                                                "lng": 10.5158353
+                                                "type": "Feature",
+                                                "geometry": {
+                                                    "type": "Point",
+                                                    "coordinates": [
+                                                        8.789595,
+                                                        46.0262182
+                                                    ]
+                                                },
+                                                "properties": {
+                                                    "id": 4697
+                                                }
                                             },
                                             {
-                                                "id": "P2",
-                                                "name": "Punto Panoramico",
-                                                "lat": 43.782659,
-                                                "lng": 10.515032
-                                            },
-                                            {
-                                                "id": "P3",
-                                                "name": "Fine Sentiero",
-                                                "lat": 43.778706,
-                                                "lng": 10.516022
+                                                "type": "Feature",
+                                                "geometry": {
+                                                    "type": "MultiLineString",
+                                                    "coordinates": [
+                                                        [
+                                                            [
+                                                                8.790768804,
+                                                                46.02130766
+                                                            ],
+                                                            [
+                                                                8.790814234,
+                                                                46.02136516
+                                                            ],
+                                                            [
+                                                                8.791116,
+                                                                46.0268621
+                                                            ]
+                                                        ]
+                                                    ]
+                                                },
+                                                "properties": {
+                                                    "id": 848
+                                                }
                                             }
                                         ]
                                     }
@@ -501,47 +375,121 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Matrix calculated successfully",
+                        "description": "Returns a GeoJSON FeatureCollection with enriched Point features",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "points": {
-                                            "description": "Ordered points with calculated data",
+                                        "type": {
+                                            "description": "GeoJSON FeatureCollection type",
+                                            "type": "string",
+                                            "example": "FeatureCollection"
+                                        },
+                                        "features": {
+                                            "description": "<p>Array of GeoJSON Feature objects.</p><p>Contains:</p><ul><li>All <strong>Point features</strong> from input (enriched with matrix data in <code>properties.dem</code>)</li><li>All <strong>LineString/MultiLineString features</strong> from input (enriched with points ordering in <code>properties.dem</code>)</li></ul>",
                                             "type": "array",
                                             "items": {
                                                 "properties": {
-                                                    "id": {
-                                                        "type": "string"
+                                                    "type": {
+                                                        "description": "GeoJSON Feature type",
+                                                        "type": "string",
+                                                        "example": "Feature"
                                                     },
-                                                    "name": {
-                                                        "type": "string"
+                                                    "geometry": {
+                                                        "description": "<p>GeoJSON geometry enriched with <strong>3D coordinates</strong>.</p><ul><li><strong>Point features:</strong> Coordinates are <code>[lng, lat, elevation]</code> where elevation is calculated from DEM</li><li><strong>LineString/MultiLineString features:</strong> All coordinate points are enriched with elevation <code>[lng, lat, elevation]</code></li></ul><p><em>Note:</em> If input coordinates already have a Z value of 0, it will be recalculated from DEM. Original 2D coordinates <code>[lng, lat]</code> are automatically converted to 3D <code>[lng, lat, elevation]</code>.</p>",
+                                                        "type": "object"
                                                     },
-                                                    "lat": {
-                                                        "type": "number"
-                                                    },
-                                                    "lng": {
-                                                        "type": "number"
-                                                    },
-                                                    "elevation": {
-                                                        "type": "integer"
-                                                    },
-                                                    "position_on_track": {
-                                                        "type": "number"
-                                                    },
-                                                    "is_start": {
-                                                        "type": "boolean"
-                                                    },
-                                                    "is_end": {
-                                                        "type": "boolean"
+                                                    "properties": {
+                                                        "description": "<p>Feature properties.</p><p><strong>IMPORTANT:</strong> All features (Point, LineString, MultiLineString) receive a <code>dem</code> object in their properties. This object contains different data depending on the feature type.</p><p>Original properties from input are preserved and merged with the <code>dem</code> object.</p>",
+                                                        "properties": {
+                                                            "dem": {
+                                                                "description": "<p><strong>DEM (Digital Elevation Model) calculated data.</strong></p><p>This object is <em>automatically added to ALL features</em> in the response. The structure differs based on feature type:</p><ul><li><strong>Point features:</strong> Contain matrix calculation data</li><li><strong>LineString/MultiLineString features:</strong> Contain points ordering information</li></ul>",
+                                                                "type": "object",
+                                                                "oneOf": [
+                                                                    {
+                                                                        "description": "<h4>What the API adds to Point features</h4><p>For each Point feature, the API automatically adds a <code>properties.dem</code> object with the following attributes:</p><ul><li><strong>id</strong> - Point identifier (copied from input properties.id)</li><li><strong>name</strong> - Point name (from input properties.name or properties.tooltip)</li><li><strong>elevation</strong> - Elevation in meters above sea level (calculated from DEM)</li><li><strong>matrix_row</strong> - Distance/time matrix organized by track ID, where each track contains matrix data for all target Point IDs with the following attributes:<br/>• <strong>distance</strong> - Distance along the LineString from this Point to the target Point, in meters<br/>• <strong>time_hiking</strong> - Estimated hiking time from this Point to the target Point, in seconds<br/>• <strong>time_bike</strong> - Estimated biking time from this Point to the target Point, in seconds<br/>• <strong>ascent</strong> - Total elevation gain (positive elevation change) from this Point to the target Point, in meters<br/>• <strong>descent</strong> - Total elevation loss (negative elevation change) from this Point to the target Point, in meters<br/>• <strong>elevation_from</strong> - Elevation at the source Point (this Point) in meters above sea level<br/>• <strong>elevation_to</strong> - Elevation at the target Point in meters above sea level</li></ul>",
+                                                                        "properties": {
+                                                                            "id": {
+                                                                                "description": "Point identifier from properties.id (required in input)",
+                                                                                "type": "string"
+                                                                            },
+                                                                            "name": {
+                                                                                "description": "Point name from properties.name or properties.tooltip",
+                                                                                "type": "string"
+                                                                            },
+                                                                            "elevation": {
+                                                                                "description": "Point elevation in meters above sea level",
+                                                                                "type": "integer"
+                                                                            },
+                                                                            "matrix_row": {
+                                                                                "description": "<p><strong>Distance and time matrix</strong></p><p>Organized by track (LineString/MultiLineString feature ID).</p><p>Structure:</p><ul><li>First level keys: <strong>track IDs</strong> (from LineString/MultiLineString <code>properties.id</code>)</li><li>Second level keys: <strong>target Point feature IDs</strong></li><li>Values: Matrix data objects containing the following attributes:<ul><li><strong>distance</strong> - Distance along the LineString from this Point to the target Point, in meters. This is the actual path distance along the track, not straight-line distance.</li><li><strong>time_hiking</strong> - Estimated hiking time from this Point to the target Point, in seconds. Calculated based on distance and elevation gain, rounded to nearest 15 minutes.</li><li><strong>time_bike</strong> - Estimated biking time from this Point to the target Point, in seconds. Calculated based on distance and elevation gain, rounded to nearest 15 minutes.</li><li><strong>ascent</strong> - Total elevation gain (positive elevation change) from this Point to the target Point, in meters. Sum of all uphill segments along the path.</li><li><strong>descent</strong> - Total elevation loss (negative elevation change) from this Point to the target Point, in meters. Sum of all downhill segments along the path.</li><li><strong>elevation_from</strong> - Elevation at the source Point (this Point) in meters above sea level. Same value as <code>properties.dem.elevation</code>.</li><li><strong>elevation_to</strong> - Elevation at the target Point in meters above sea level.</li></ul></li></ul><p><em>This structure allows you to query distances/times from this Point to any other Point, organized by which track the calculation was performed on.</em></p>",
+                                                                                "type": "object",
+                                                                                "additionalProperties": {
+                                                                                    "type": "object",
+                                                                                    "description": "Matrix data for this track. Keys are target Point feature IDs, values are matrix data objects.",
+                                                                                    "additionalProperties": {
+                                                                                        "type": "object",
+                                                                                        "properties": {
+                                                                                            "distance": {
+                                                                                                "type": "number",
+                                                                                                "description": "Distance along the LineString in meters"
+                                                                                            },
+                                                                                            "time_hiking": {
+                                                                                                "type": "integer",
+                                                                                                "description": "Estimated hiking time in seconds"
+                                                                                            },
+                                                                                            "time_bike": {
+                                                                                                "type": "integer",
+                                                                                                "description": "Estimated biking time in seconds"
+                                                                                            },
+                                                                                            "ascent": {
+                                                                                                "type": "integer",
+                                                                                                "description": "Total elevation gain in meters"
+                                                                                            },
+                                                                                            "descent": {
+                                                                                                "type": "integer",
+                                                                                                "description": "Total elevation loss in meters"
+                                                                                            },
+                                                                                            "elevation_from": {
+                                                                                                "type": "integer",
+                                                                                                "description": "Elevation at source Point in meters"
+                                                                                            },
+                                                                                            "elevation_to": {
+                                                                                                "type": "integer",
+                                                                                                "description": "Elevation at target Point in meters"
+                                                                                            }
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        },
+                                                                        "type": "object"
+                                                                    },
+                                                                    {
+                                                                        "description": "DEM data structure for LineString/MultiLineString features. This object is automatically added to properties.dem of every LineString/MultiLineString feature in the response.",
+                                                                        "properties": {
+                                                                            "id": {
+                                                                                "description": "Track identifier copied from input properties.id (required in input). This is the same ID used as key in Point features' matrix_row structures.",
+                                                                                "type": "string"
+                                                                            },
+                                                                            "points_order": {
+                                                                                "description": "Array of Point feature IDs ordered by their position along this track, from start to end. The first element in the array is the Point closest to the track start (lowest position_on_track value), and the last element is the Point closest to the track end (highest position_on_track value). This array allows you to determine which Point is the start point (first element) and which is the end point (last element) for this specific track. IMPORTANT: The same Point can appear in different positions in different tracks' points_order arrays, as its position depends on the track geometry.",
+                                                                                "type": "array",
+                                                                                "items": {
+                                                                                    "type": "string"
+                                                                                }
+                                                                            }
+                                                                        },
+                                                                        "type": "object"
+                                                                    }
+                                                                ]
+                                                            }
+                                                        },
+                                                        "type": "object"
                                                     }
                                                 },
                                                 "type": "object"
                                             }
-                                        },
-                                        "matrix": {
-                                            "description": "Travel time matrix between all point pairs",
-                                            "type": "object"
                                         }
                                     },
                                     "type": "object"
@@ -570,8 +518,8 @@
             "description": "3D Data"
         },
         {
-            "name": "Track Matrix",
-            "description": "Track Matrix"
+            "name": "Point Matrix",
+            "description": "Point Matrix"
         }
     ]
 }
