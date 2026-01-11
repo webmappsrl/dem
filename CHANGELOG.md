@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.0](https://github.com/webmappsrl/dem/compare/v1.1.0...v1.2.0) (2025-12-02)
+
+
+### Features
+
+* **api:** ✨ update API to support FeatureCollection input ([2ac7a05](https://github.com/webmappsrl/dem/commit/2ac7a05fa08e0f33565c4a6bbbd218569f5cfaf1))
+* **track-matrix:** ✨ add travel time matrix calculation for hiking tracks ([f0eac61](https://github.com/webmappsrl/dem/commit/f0eac61b011bff0cbe1817cd3c7c9819b43c855e))
+
 ## [1.1.0](https://github.com/webmappsrl/dem/compare/v1.0.0...v1.1.0) (2025-01-08)
 
 
