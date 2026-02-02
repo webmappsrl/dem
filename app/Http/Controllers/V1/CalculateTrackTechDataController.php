@@ -402,11 +402,8 @@ class CalculateTrackTechDataController extends Controller
             $trackId = $trackInfo['id'];
             $trackGeometry = $trackInfo['geometry'];
 
-            // Converti MultiLineString in LineString se necessario
-            if ($trackGeometry['type'] === 'MultiLineString') {
-                $trackGeometry = $this->convertMultiLineStringToLineString($trackGeometry);
-            }
-
+            // Stessa geometria di /api/v1/track (tech data): MultiLineString/LineString passata a PostGIS
+            // così ST_LineMerge fa il merge per connettività e le distanze coincidono con tech data.
             $geometry = DB::select("SELECT ST_Force2D(ST_LineMerge(ST_GeomFromGeoJSON('" . json_encode($trackGeometry) . "'))) As wkt")[0]->wkt;
 
             $track = Track::create([
@@ -665,6 +662,10 @@ class CalculateTrackTechDataController extends Controller
                 'matrix_row' => $matrixRowByTrack
             ];
 
+            // Allinea signage con i valori calcolati (distance, time_*, ascent, descent, elevation_*)
+            // così la risposta non contiene distanze/tempi obsoleti dall'input.
+            $properties = $this->syncSignageWithMatrixRow($properties, $matrixRowByTrack);
+
             // Calcola l'elevazione per il punto
             $pointLng = $pointCoordinates[0] ?? $point['lng'] ?? 0;
             $pointLat = $pointCoordinates[1] ?? $point['lat'] ?? 0;
@@ -715,6 +716,52 @@ class CalculateTrackTechDataController extends Controller
         }
 
         return $features;
+    }
+
+    /**
+     * Sovrascrive in properties.signage i campi distance, time_hiking, time_bike, ascent, descent,
+     * elevation_from, elevation_to con i valori calcolati da dem.matrix_row, per coerenza con la track.
+     *
+     * @param array $properties Properties della feature (può contenere signage)
+     * @param array $matrixRowByTrack dem.matrix_row: [trackId => [targetId => [distance, time_hiking, ...]], ...]
+     * @return array properties con signage aggiornato
+     */
+    private function syncSignageWithMatrixRow(array $properties, array $matrixRowByTrack): array
+    {
+        $signage = $properties['signage'] ?? null;
+        if (!is_array($signage) || empty($matrixRowByTrack)) {
+            return $properties;
+        }
+
+        foreach ($matrixRowByTrack as $trackId => $targets) {
+            $trackIdStr = (string) $trackId;
+            if (!isset($signage[$trackIdStr]['arrows']) || !is_array($signage[$trackIdStr]['arrows'])) {
+                continue;
+            }
+
+            foreach ($signage[$trackIdStr]['arrows'] as $arrowIdx => $arrow) {
+                if (!isset($arrow['rows']) || !is_array($arrow['rows'])) {
+                    continue;
+                }
+                foreach ($arrow['rows'] as $rowIdx => $row) {
+                    $targetId = isset($row['id']) ? (string) $row['id'] : null;
+                    if (!$targetId || !isset($targets[$targetId])) {
+                        continue;
+                    }
+                    $data = $targets[$targetId];
+                    $signage[$trackIdStr]['arrows'][$arrowIdx]['rows'][$rowIdx]['distance'] = $data['distance'];
+                    $signage[$trackIdStr]['arrows'][$arrowIdx]['rows'][$rowIdx]['time_hiking'] = $data['time_hiking'];
+                    $signage[$trackIdStr]['arrows'][$arrowIdx]['rows'][$rowIdx]['time_bike'] = $data['time_bike'];
+                    $signage[$trackIdStr]['arrows'][$arrowIdx]['rows'][$rowIdx]['ascent'] = $data['ascent'];
+                    $signage[$trackIdStr]['arrows'][$arrowIdx]['rows'][$rowIdx]['descent'] = $data['descent'];
+                    $signage[$trackIdStr]['arrows'][$arrowIdx]['rows'][$rowIdx]['elevation_from'] = $data['elevation_from'];
+                    $signage[$trackIdStr]['arrows'][$arrowIdx]['rows'][$rowIdx]['elevation_to'] = $data['elevation_to'];
+                }
+            }
+        }
+
+        $properties['signage'] = $signage;
+        return $properties;
     }
 
     /**
