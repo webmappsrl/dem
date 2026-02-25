@@ -104,10 +104,10 @@ trait SlopeAndElevationTrait
         $round_trip = DB::select("SELECT ST_Distance(ST_StartPoint('$resampled_line'), ST_EndPoint('$resampled_line')) < $round_trip_max_distance_param AS round_trip")[0]->round_trip;
 
         // Calculate Duration and set it to the nearest 15 minutes
-        $duration_forward_hiking = ceil($this->calcDuration($distance, $ascent, 'hiking') / 15) * 15;
-        $duration_backward_hiking = ceil($this->calcDuration($distance, $descent, 'hiking') / 15) * 15;
-        $duration_forward_bike = ceil($this->calcDuration($distance, $ascent, 'bike') / 15) * 15;
-        $duration_backward_bike = ceil($this->calcDuration($distance, $descent, 'bike') / 15) * 15;
+        $duration_forward_hiking = ceil($this->calcDuration($distance, $ascent, 'hiking'));
+        $duration_backward_hiking = ceil($this->calcDuration($distance, $descent, 'hiking'));
+        $duration_forward_bike = ceil($this->calcDuration($distance, $ascent, 'bike'));
+        $duration_backward_bike = ceil($this->calcDuration($distance, $descent, 'bike'));
 
 
         $geojson = [];
@@ -352,8 +352,8 @@ trait SlopeAndElevationTrait
                 'descent' => intval($descent),
                 'elevation_from' => $from['elevation'],
                 'elevation_to' => $to['elevation'],
-                'time_hiking' => ceil($this->calcDuration($distance / 1000, $ascent, 'hiking') / 15) * 15,
-                'time_bike' => ceil($this->calcDuration($distance / 1000, $ascent, 'bike') / 15) * 15,
+                'time_hiking' => ceil($this->calcDuration($distance / 1000, $ascent, 'hiking')),
+                'time_bike' => ceil($this->calcDuration($distance / 1000, $ascent, 'bike')),
             ];
         }
 
@@ -400,8 +400,8 @@ trait SlopeAndElevationTrait
 
                 $matrix[$point_i['id']][$point_j['id']] = [
                     'distance' => $total_distance,
-                    'time_hiking' => ceil($this->calcDuration($total_distance / 1000, $total_ascent, 'hiking') / 15) * 15,
-                    'time_bike' => ceil($this->calcDuration($total_distance / 1000, $total_ascent, 'bike') / 15) * 15,
+                    'time_hiking' => ceil($this->calcDuration($total_distance / 1000, $total_ascent, 'hiking')),
+                    'time_bike' => ceil($this->calcDuration($total_distance / 1000, $total_ascent, 'bike')),
                     'ascent' => intval($total_ascent),
                     'descent' => intval($total_descent),
                     'elevation_from' => $elevation_from,
