@@ -14,34 +14,35 @@ RUN chown -R www-data:www-data /var/www \
     && chown  www-data:www-data /usr/local/etc/php-fpm.d/www.conf \
     && chown -R www-data:www-data /usr/local/etc/php-fpm.d/zz-docker.conf \
     && apt-get update && apt-get install -y \
-        libfreetype6-dev \
-        libjpeg62-turbo-dev \
-        libmcrypt-dev \
-        libpng-dev \
-        zlib1g-dev \
-        libicu-dev \
-        g++ \
-        imagemagick \
-        libmagickwand-dev \
-        libmagickcore-dev \
-        git \
-	    unzip \
-        vim \
-        libzip-dev \
-	    libwebp-dev \
-        libpq-dev 
+    libfreetype6-dev \
+    libjpeg62-turbo-dev \
+    libmcrypt-dev \
+    libpng-dev \
+    zlib1g-dev \
+    libicu-dev \
+    g++ \
+    imagemagick \
+    libmagickwand-dev \
+    libmagickcore-dev \
+    git \
+    unzip \
+    vim \
+    libzip-dev \
+    libwebp-dev \
+    libpq-dev 
 RUN docker-php-ext-configure gd --enable-gd --with-freetype --with-jpeg --with-webp \
     && docker-php-ext-configure intl \
     && docker-php-ext-install -j$(nproc) \
-	gd \
-	intl \
-	zip \
-   	pdo \
+    gd \
+    intl \
+    zip \
+    pdo \
     pdo_mysql \
     opcache \
     pgsql \
     pdo_pgsql \
     exif \
+    pcntl \
     # && pecl install xdebug \
     && pecl install imagick \
     # && docker-php-ext-enable xdebug \
