@@ -30,3 +30,7 @@ services:
       - "./docker/volumes/postgresql/data:/var/lib/postgresql/data"
     ports: 
       - ${DOCKER_PSQL_PORT}:5432
+  redis:
+    image: redis:latest
+    container_name: "redis_${APP_NAME}"
+    restart: always
