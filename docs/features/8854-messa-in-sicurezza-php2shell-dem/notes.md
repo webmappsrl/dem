@@ -61,3 +61,10 @@ Esiti (dettagli in `LLM_MD`, fuori dal repo):
   automatico ripartirebbe.
 - PHP 8.2 in EOL il 31/12/2026: la 8.3 è esclusa da `lcobucci/clock` 3.0.0 del lock.
 - Rinominare il container (`php81_dem` esegue PHP 8.2).
+
+### Task 4 server prima dem poi dem-2
+
+- **Ordine invertito.** Si parte da DEM (server precedente, senza client veri) come prova generale,
+  poi DEM-2: i due server sono gemelli (stessa immagine, stesso compose a meno dei volumi), e un
+  problema visibile solo sul server (build pecl su amd64, disco) emerge senza toccare i client.
+  Costo accettato: DEM-2 resta esposto circa un'ora in più (dev, 23/10).

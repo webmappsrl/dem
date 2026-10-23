@@ -98,6 +98,8 @@ esito test, risposte delle API) che il Task 4 riusa come riferimento.
 
 ### Task 4: Server — prima DEM-2, poi DEM
 
+> ⚠️ L'implementazione ha deviato da questo task: [notes.md](notes.md#task-4-server-prima-dem-poi-dem-2)
+
 Stessi passi su ciascun server (`ssh dem2`, poi `ssh dem`), in `/var/www/html/dem`. Si passa a
 DEM solo con DEM-2 verificato.
 
